@@ -1,0 +1,34 @@
+{
+  "name": "rhubarbphp/scaffold-migrations",
+  "description": "Provides scripted updates for managed transitions in application versions",
+  "keywords": [
+    "version",
+    "script",
+    "rhubarb",
+    "php",
+    "framework",
+    "migration"
+  ],
+  "homepage": "http://www.rhubarbphp.com/",
+  "license": "Apache-2.0",
+  "autoload": {
+    "psr-4": {
+      "Rhubarb\\Scaffolds\\Migrations\\": "src/",
+      "Rhubarb\\Scaffolds\\Migrations\\Tests\\": "tests/unit/"
+    }
+  },
+  "require": {
+    "rhubarbphp/rhubarb": "^1.5.9",
+    "rhubarbphp/module-stem": "*",
+    "rhubarbphp/custard": "*",
+    "rhubarbphp/scaffold-application-settings": "^1.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^6.5",
+    "codeception/codeception": "2.3.*",
+    "codeception/verify": "^1.0"
+  },
+  "config": {
+    "bin-dir": "bin/"
+  }
+}
