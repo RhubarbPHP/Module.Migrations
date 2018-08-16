@@ -25,8 +25,8 @@ class MigrationsSettings extends Settings
 
     protected function initialiseDefaultValues()
     {
-        $this->localVersionPath = sys_get_temp_dir() . self::DEFAULT_LOCAL_VERSION_FILE;
-        $this->resumeScriptPath = sys_get_temp_dir() . self::DEFAULT_RESUME_SCRIPT_FILE;
+        $this->localVersionPath = sys_get_temp_dir() . '/' . self::DEFAULT_LOCAL_VERSION_FILE;
+        $this->resumeScriptPath = sys_get_temp_dir() . '/' .self::DEFAULT_RESUME_SCRIPT_FILE;
     }
 
     /**

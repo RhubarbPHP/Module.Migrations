@@ -40,9 +40,7 @@ class MigrateToVersionUseCase
         foreach ($migrationScripts as $migrationScript) {
             try {
                 $scriptClass = get_class($migrationScript);
-                $applicationVersion = $migrationScript->version();
-                $priority = $migrationScript->priority();
-                Log::info("Executing Script $scriptClass for version $applicationVersion with priority $priority");
+                Log::info("Executing Script $scriptClass for version {$migrationScript->version()} with priority {$migrationScript->priority()}");
                 $migrationScript->execute();
             } catch (Exception $exception) {
                 Log::error($exception->getMessage(), "", $exception->getTrace());
