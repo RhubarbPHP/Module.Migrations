@@ -48,9 +48,11 @@ abstract class DataMigrationScript implements MigrationScript
 
         $modelSchema = $model->getSchema();
         foreach ($newColumns as $newColumn) {
-            $modelSchema->addColumn($newColumn);
+            if ($modelSchema->getColumns()[$newColumn->columnName] == null) {
+                $modelSchema->addColumn($newColumn);
+            }
         }
-        $modelSchema->checkSchema($model->getRepository());
+        $this->updateRepo($model, $modelSchema);
 
         foreach ($model::find(new Not(new Equals($existingColumn, ''))) as $row) {
             $data = $splitFunction($row->$existingColumn);
@@ -64,6 +66,11 @@ abstract class DataMigrationScript implements MigrationScript
             }
             $row->save();
         }
+    }
+
+    protected function updateRepo(Model $model, ModelSchema $modelSchema = null)
+    {
+        ($modelSchema ?? $model->getRepository()->getRepositorySchema())->checkSchema($model->getRepository());
     }
 
     /**
@@ -91,7 +98,7 @@ abstract class DataMigrationScript implements MigrationScript
         /** @var Model $model */
         $model = new $modelClass();
         /** @var ModelSchema $modelSchema */
-        $modelSchema = $model->getSchema();
+        $modelSchema = $model->getRepository()->getRepositorySchema();
 
         if (get_class($model->getRepository()) !== MigrationsSettings::singleton()->repositoryType) {
             $throwErrorForModelClass();

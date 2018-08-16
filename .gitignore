@@ -3,6 +3,7 @@
 /settings/
 /deployed/
 /log/
+/.idea/
 # Created by https://www.gitignore.io/api/sass,macos,windows,phpstorm+iml,composer,vagrant
 
 ### Composer ###
