@@ -63,6 +63,24 @@ class DataMigrationScriptTest extends MigrationsTestCase
         }
     }
 
+    public function testDuplicateColumnsAdded(){
+        $script = new TestDataMigrationScript();
+        $this->populateUsers(5);
+        verify((new TestUser())->getSchema()->getColumns())->count(3);
+        $script->performSplitColumn(
+            TestUser::class,
+            'name',
+            [
+                new StringColumn('name', 50),
+                new StringColumn('initials', 50),
+            ],
+            function ($existingData) {
+                return [$existingData, $existingData[0]];
+            }
+        );
+        verify(TestUser::all()[0]->exportData())->count(4);
+    }
+
     public function testPaging()
     {
         $this->populateUsers(701);
