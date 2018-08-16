@@ -32,7 +32,7 @@ class MigrationsSettings extends Settings
     protected function initialiseDefaultValues()
     {
         $this->localVersionPath = sys_get_temp_dir() . '/' . self::DEFAULT_LOCAL_VERSION_FILE;
-        $this->resumeScriptPath = sys_get_temp_dir() . '/' .self::DEFAULT_RESUME_SCRIPT_FILE;
+        $this->resumeScriptPath = sys_get_temp_dir() . '/' . self::DEFAULT_RESUME_SCRIPT_FILE;
     }
 
     /**
@@ -115,6 +115,7 @@ class MigrationsSettings extends Settings
      */
     public function setLocalVersionPath(string $localVersionPath): void
     {
+        $this->moveLocalFile($this->getLocalVersionFilePath(), $localVersionPath);
         $this->localVersionPath = $localVersionPath;
     }
 
@@ -123,8 +124,19 @@ class MigrationsSettings extends Settings
      */
     public function setResumeScriptPath(string $resumeScriptPath): void
     {
+        $this->moveLocalFile($this->getResumeScriptFilePath(), $resumeScriptPath);
         $this->resumeScriptPath = $resumeScriptPath;
     }
 
+    private function moveLocalFile($oldPath, $newPath)
+    {
+        if (file_get_contents($this->localVersionPath) !== false) {
+            $localValue = file_get_contents($oldPath);
+            unlink($oldPath);
+            file_put_contents($newPath, $localValue);
+        }
+
+
+    }
 
 }

@@ -51,6 +51,20 @@ class MigrationsSettingsTest extends MigrationsTestCase
         verify($this->settings->getResumeScript())->null();
     }
 
+    public function testChangingFileLocation() {
+        $this->settings->setLocalVersion(1);
+        verify(file_get_contents($this->settings->getLocalVersionFilePath()))->equals(1);
+        $oldLocPath = $this->settings->getLocalVersionFilePath();
+        $this->settings->setLocalVersionPath(__DIR__ . '/../_data/locver.lock');
+        verify(file_get_contents($this->settings->getLocalVersionFilePath()))->equals(1);
+
+        $this->settings->setResumeScript('lads');
+        verify(file_get_contents($this->settings->getResumeScriptFilePath()))->equals('lads');
+        $this->settings->setResumeScriptPath(__DIR__ . '/../_data/resscr.lock');
+        verify($this->settings->getResumeScriptFilePath())->notEquals($oldLocPath);
+        verify(file_get_contents($this->settings->getResumeScriptFilePath()))->equals('lads');
+    }
+
     private function clearLocalVersion()
     {
         $this->settings->localVersion = null;
