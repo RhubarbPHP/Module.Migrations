@@ -106,3 +106,64 @@ class ContactNameSplitting extends DataMigrationScript
         }
 }
 ~~~
+
+## Custard Commands
+
+### migrations:migrate
+
+##### Parameters
+
+Parameters must be given in order. 
+
+| Parameter | Description | Default |
+| --- | --- | --- | 
+| Target Version | Which version migrations should be ran up to | current application version |
+| Starting Version | Where migrations should start from | current local version |
+
+##### Options
+
+| Option | shortcut |  Description | 
+| --- | :---: | --- | 
+| Skip Scripts | -s | It is possible to skip certain scripts, for example if you are re-running a failed migration and do not want to include the failing script. To do so simply include teh option -s with the next input being the script to skip. You can include multiple scripts | 
+| Resume | -r | If a previous migration failed you can fix the issue and resume the migratino from that point. |
+
+##### Examples
+
+Migrate to version 13 from current: `/vagrant/bin/custard migrations:migrate 13`
+Migrate from version 14 to 18: `/vagrant/bin/custard migrations:migrate 18 14`
+
+Resume migrating to version 18 skipping two scripts: 
+
+`/vagrant/bin/custard migrations:migrate -r 18 -s My\Project\Scripts\NewMigrationScript.php -s My\Project\Scripts\DestroyOldDataScript.php`
+
+### migrations:run-script
+
+This command simply takes the name of a script and executes it immediately.
+
+##### Example
+
+Run NewMigrationScript 
+
+`/vagrant/bin/custard migrations:run-script My\Project\Scripts\NewMigrationScript.php` 
+
+## Configuration
+
+There are a number of settings that can be customized with the MigrationsSettings class. 
+
+
+| Setting | Description | Default |
+| --- | --- | --- |
+| setLocalVersionPath() | Used to set the path and name of the file that stores the Local Version number.  | System temp directory | 
+| setResumeScriptPath() | Used to set the path and name of the file that stores the resume point for if a migration fails | System temp directory | 
+| pageType | When a DataMigrationScript needs to iterate over large collections it will page based on this setting. | 100 | 
+| RepositoryType | Informs the migration module which repositry type is in use. | MySql::class | 
+
+~~~php
+...
+$migrationSettings = MigrationsSettings::singleton();
+$migrationSettings->setLocalVersionPath(__DIR__ . 'local-version.lock');
+$migrationSettings->setResumeScriptPath(__DIR__ . 'resume-script.lock');
+$migrationSettings->repositoryType = MySql::class;
+$migrationSettings->pageSize = 1000; 
+...
+~~~ 

@@ -26,7 +26,6 @@ class RunMigrationScriptCommand extends CustardCommand
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-
         $scriptClass = $input->getArgument(self::ARG_SCRIPT_CLASS);
         if (is_null($scriptClass)) {
             $output->writeln("Availble Migration Scrips:");
