@@ -46,7 +46,7 @@ abstract class DataMigrationScript implements MigrationScript
         /** @var Model $model */
         $model = new $modelClass();
 
-        $modelSchema = $model->getSchema();
+        $modelSchema = $model->getRepository()->getRepositorySchema();
         foreach ($newColumns as $newColumn) {
             if ($modelSchema->getColumns()[$newColumn->columnName] == null) {
                 $modelSchema->addColumn($newColumn);
