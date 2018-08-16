@@ -130,6 +130,7 @@ Parameters must be given in order.
 ##### Examples
 
 Migrate to version 13 from current: `/vagrant/bin/custard migrations:migrate 13`
+
 Migrate from version 14 to 18: `/vagrant/bin/custard migrations:migrate 18 14`
 
 Resume migrating to version 18 skipping two scripts: 
@@ -138,7 +139,7 @@ Resume migrating to version 18 skipping two scripts:
 
 ### migrations:run-script
 
-This command simply takes the name of a script and executes it immediately.
+This command simply takes the class of a script and executes it immediately.
 
 ##### Example
 

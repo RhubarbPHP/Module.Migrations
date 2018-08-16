@@ -11,7 +11,7 @@ class ExampleMigrationScript implements MigrationScript
      */
     public function execute()
     {
-        foreach (Image::all(new Equals('active', false)) as $image) {
+        foreach (Image::find(new Equals('active', false)) as $image) {
             unlink($image->filePath);
             $image->delete();
         }
