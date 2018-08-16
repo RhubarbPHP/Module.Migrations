@@ -61,7 +61,7 @@ class MigrateCommand extends CustardCommand
         $entity->localVersion = $startVersion;
         $entity->targetVersion = $targetVersion;
         $entity->skipScripts = $skipScripts;
-        $entity->resumeScript = $resumeScript;
+        $entity->resumeScript = $resumeScript ?? null;
 
         try {
             MigrateToVersionUseCase::execute($entity);
