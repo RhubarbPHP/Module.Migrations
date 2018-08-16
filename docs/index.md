@@ -60,13 +60,13 @@ class ImageDeletionScript extends VersionUpgradeScript
 Scripts will not be ran unless they are registered. Scripts can be registered by calling `registerMigrationScripts($scriptsArray)` on MigrationsModule.  
 
 
-```$php
+~~~php
    MigrationsManager::getMigrationsManager()->registerMigrationScripts([
        SplitNameColumnScript::class,
        DeleteAllImagesScript::class,
        UpdatedGdprInfoScript::class
    ]);
-```
+~~~
 
 ## Data Migration Scripts
 
