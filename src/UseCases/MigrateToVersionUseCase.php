@@ -3,8 +3,7 @@
 
 namespace Rhubarb\Scaffolds\Migrations\UseCases;
 
-
-use PHPUnit\Runner\Exception;
+use Exception;
 use Rhubarb\Crown\Logging\Log;
 use Rhubarb\Scaffolds\Migrations\MigrationsManager;
 use Rhubarb\Scaffolds\Migrations\MigrationsSettings;
@@ -14,7 +13,7 @@ class MigrateToVersionUseCase
 {
     /**
      * @param int $targetVersion
-     * @throws \Rhubarb\Crown\Exceptions\ImplementationException
+     * @throws \Rhubarb\Crown\Exceptions\ImplementationException|Exception
      */
     public static function execute(MigrationEntity $entity)
     {
@@ -42,7 +41,8 @@ class MigrateToVersionUseCase
                 $scriptClass = get_class($migrationScript);
                 Log::info("Executing Script $scriptClass for version {$migrationScript->version()} with priority {$migrationScript->priority()}");
                 $migrationScript->execute();
-            } catch (Exception $exception) {
+            } catch (\Exception $exception) {
+                MigrationsSettings::singleton()->setResumeScript(get_class($migrationScript));
                 Log::error($exception->getMessage(), "", $exception->getTrace());
                 throw $exception;
             }
@@ -67,13 +67,6 @@ class MigrateToVersionUseCase
     {
         $scripts = MigrationsManager::getMigrationsManager()->getMigrationScripts();
 
-        $lower = $entity->localVersion;
-        /** @var MigrationScript $resume */
-        if ($entity->resumeScript && is_a($resume = new $entity->resumeScript(), MigrationScript::class)) {
-            $migrationScripts[] = $resume;
-            $lower = $resume->version();
-        }
-
         foreach ($scripts as $script) {
             if (
                 in_array(get_class($script), $entity->skipScripts)
@@ -82,7 +75,7 @@ class MigrateToVersionUseCase
                 continue;
             }
             if (
-                $script->version() >= $lower
+                $script->version() >= $entity->localVersion
                 && $script->version() <= $entity->targetVersion
             ) {
                 $migrationScripts[] = $script;
@@ -100,6 +93,12 @@ class MigrateToVersionUseCase
                 return $b->priority() <=> $a->priority();
             }
         });
+
+        /** @var MigrationScript $resume */
+        if ($entity->resumeScript && is_a($resume = new $entity->resumeScript(), MigrationScript::class)) {
+            $key = array_search($entity->resumeScript, array_map('get_class', $migrationScripts));
+            array_splice($migrationScripts, 0, $key);
+        }
 
         return $migrationScripts;
     }

@@ -137,6 +137,49 @@ class MigrateUseCaseTest extends MigrationsTestCase
         verify(MigrationsSettings::singleton()->getLocalVersion())->equals(2);
     }
 
+    public function testResumeScriptSaves()
+    {
+        $failingScript = $this->newScript(
+            4,
+            5,
+            function () {
+                throw new ImplementationException($msg = "hi i'm an exception");
+            }
+        );
+
+        $this->manager->setMigrationScripts([$failingScript]);
+
+        try {
+            MigrateToVersionUseCase::execute($this->makeEntity(6, 3));
+            $this->fail('Exceptions should be returned if they are thrown.');
+        } catch (ImplementationException $exception) {
+            verify($exception->getMessage())->equals("hi i'm an exception");
+        }
+        verify($this->settings->getResumeScript())->equals(get_class($failingScript));
+    }
+
+    public function testResumeOnScript()
+    {
+        foreach (range(1,6) as $number) {
+            $scripts[] = $this->newScript($number, 99, function () {
+                $this->fail('Scripts before the resume point should never run');
+            });
+        }
+        $scripts[] = new TestMigrationScript();
+        $count = 0;
+        foreach (range(6, 9) as $number) {
+            $scripts[] = $this->newScript($number, 1, function() use (&$count) {
+                return $count++;
+            });
+        }
+
+        $this->manager->setMigrationScripts($scripts);
+        $entity = $this->makeEntity(10, 0, TestMigrationScript::class);
+        MigrateToVersionUseCase::execute($entity);
+
+        verify($count)->equals(4);
+    }
+
     protected static function runMethodAsPublic($method, ...$params)
     {
         try {

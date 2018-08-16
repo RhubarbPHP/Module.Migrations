@@ -8,7 +8,6 @@ use PHPUnit\Runner\Exception;
 use Rhubarb\Crown\Application;
 use Rhubarb\Crown\Exceptions\ImplementationException;
 use Rhubarb\Custard\Command\CustardCommand;
-use Rhubarb\Scaffolds\Migrations\MigrationSettings;
 use Rhubarb\Scaffolds\Migrations\MigrationsSettings;
 use Rhubarb\Scaffolds\Migrations\UseCases\MigrateToVersionUseCase;
 use Rhubarb\Scaffolds\Migrations\UseCases\MigrationEntity;
