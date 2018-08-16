@@ -20,6 +20,12 @@ class MigrationsSettings extends Settings
     public $resumeScript;
     /** @var string $resumeScriptPath */
     public $resumeScriptPath;
+    /**
+     * Used when updating values in a table.
+     *
+     * @var int $pageSize
+     */
+    public $pageSize = 100;
 
     public $repositoryType = MySql::class;
 

@@ -119,18 +119,20 @@ abstract class DataMigrationScript implements MigrationScript
      */
     protected function replaceValueInColumn(Model $model, string $columnName, $currentValue, $newValue)
     {
+        $pageSize = MigrationsSettings::singleton()->pageSize;
+
         $collection = new RepositoryCollection(get_class($model));
-        $collection->filter([new Equals($columnName, $currentValue)]);
         $count = $collection->count();
+        $collection->filter([new Equals($columnName, $currentValue)]);
         $collection->enableRanging();
-        $collection->setRange($startIndex = 0, 100);
+        $collection->setRange($startIndex = 0, $pageSize);
         $collection->markRangeApplied();
         while ($startIndex < $count) {
             foreach ($collection as $row) {
                 $row->$columnName = $newValue;
                 $row->save();
             }
-            $collection->setRange($startIndex += 100, 100);
+            $collection->setRange($startIndex += $pageSize, $pageSize);
         }
     }
 
