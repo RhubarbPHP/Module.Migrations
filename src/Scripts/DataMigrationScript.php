@@ -8,6 +8,7 @@ use Rhubarb\Crown\Exceptions\ImplementationException;
 use Rhubarb\Crown\Logging\Log;
 use Rhubarb\Scaffolds\Migrations\MigrationsSettings;
 use Rhubarb\Stem\Collections\RepositoryCollection;
+use Rhubarb\Stem\Exceptions\FilterNotSupportedException;
 use Rhubarb\Stem\Filters\Equals;
 use Rhubarb\Stem\Filters\Not;
 use Rhubarb\Stem\Models\Model;
@@ -22,7 +23,7 @@ use Rhubarb\Stem\Schema\ModelSchema;
  */
 abstract class DataMigrationScript implements MigrationScript
 {
-    protected $repoSchemas;
+    private $repoSchemas;
 
     /**
      * The splitFunctions takes a single variable: the contents of an $existingColumn. It must return an array
@@ -70,7 +71,6 @@ abstract class DataMigrationScript implements MigrationScript
      * @param string $currentValue
      * @param string $newValue
      * @throws ImplementationException
-     * @throws \Rhubarb\Stem\Exceptions\FilterNotSupportedException
      */
     protected final function updateEnumOption(
         string $modelClass,
@@ -115,15 +115,21 @@ abstract class DataMigrationScript implements MigrationScript
      * @param string $columnName
      * @param string $currentValue
      * @param string $newValue
-     * @throws \Rhubarb\Stem\Exceptions\FilterNotSupportedException
+     * @throws ImplementationException
      */
     protected function replaceValueInColumn(Model $model, string $columnName, $currentValue, $newValue)
     {
         $pageSize = MigrationsSettings::singleton()->pageSize;
+        $modelClass = get_class($model);
 
-        $collection = new RepositoryCollection(get_class($model));
+        $collection = new RepositoryCollection($modelClass);
         $count = $collection->count();
-        $collection->filter([new Equals($columnName, $currentValue)]);
+        try {
+            $collection->filter([new Equals($columnName, $currentValue)]);
+        } catch (FilterNotSupportedException $e) {
+            $this->throwError("filter", "could not filter model $modelClass for value $currentValue", 'value update');
+        }
+
         $collection->enableRanging();
         $collection->setRange($startIndex = 0, $pageSize);
         $collection->markRangeApplied();
@@ -140,7 +146,7 @@ abstract class DataMigrationScript implements MigrationScript
      * @param Model $model
      * @return ModelSchema
      */
-    protected function getRepoSchema(Model $model)
+    private function getRepoSchema(Model $model)
     {
         if ($this->repoSchemas[$model->getModelName()]) {
             return $this->repoSchemas[$model->getModelName()];
@@ -152,7 +158,7 @@ abstract class DataMigrationScript implements MigrationScript
      * @param ModelSchema $modelSchema
      * @param array       $columns
      */
-    protected function addColumnsToSchema(Model $model, array $columns)
+    private function addColumnsToSchema(Model $model, array $columns)
     {
         foreach ($columns as $newColumn) {
             $this->getRepoSchema($model)->addColumn($newColumn);
@@ -164,7 +170,7 @@ abstract class DataMigrationScript implements MigrationScript
      * @param Model            $model
      * @param ModelSchema|null $modelSchema
      */
-    protected function updateRepo(Model $model, ModelSchema $modelSchema = null)
+    private final function updateRepo(Model $model, ModelSchema $modelSchema = null)
     {
         ($modelSchema ?? $model->getRepository()->getRepositorySchema())->checkSchema($model->getRepository());
     }
@@ -175,7 +181,7 @@ abstract class DataMigrationScript implements MigrationScript
      * @param string $typeOfDataMigration
      * @throws ImplementationException
      */
-    protected function throwError($nameOfInvalidParam, $invalidParam, $typeOfDataMigration)
+    private function throwError($nameOfInvalidParam, $invalidParam, $typeOfDataMigration)
     {
         $msg = "Invalid $nameOfInvalidParam provided in $typeOfDataMigration operation: $invalidParam";
         Log::error($msg);
@@ -187,7 +193,7 @@ abstract class DataMigrationScript implements MigrationScript
      * @param string|null $type
      * @throws ImplementationException
      */
-    protected function getModelFromClass(string $modelClass, string $type = null)
+    private function getModelFromClass(string $modelClass, string $type = null)
     {
         $error = function () use ($modelClass, $type) {
             $this->throwError('model class', $modelClass, $type ?? '');

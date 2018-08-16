@@ -24,7 +24,6 @@ use Rhubarb\Scaffolds\Migrations\Commands\RunMigrationScriptCommand;
 
 class MigrationsModule extends Module
 {
-
     public function getCustardCommands()
     {
         return
