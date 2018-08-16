@@ -22,6 +22,8 @@ use Rhubarb\Stem\Schema\ModelSchema;
  */
 abstract class DataMigrationScript implements MigrationScript
 {
+    protected $repoSchemas;
+
     /**
      * The splitFunctions takes a single variable: the contents of an $existingColumn. It must return an array
      * with that data split into the new columns. The array should return data in the exact same order as the columns
