@@ -7,6 +7,7 @@ namespace Rhubarb\Scaffolds\Migrations\Commands;
 use Rhubarb\Crown\Application;
 use Rhubarb\Custard\Command\CustardCommand;
 use Rhubarb\Scaffolds\Migrations\MigrationsSettings;
+use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -25,7 +26,9 @@ class GetMigrationSettingsCommand extends CustardCommand
         };
         $migrationSettings = MigrationsSettings::singleton();
 
-        $output->writeln("<info>Current Migration Settings:</info>");
+        $output->getFormatter()->setStyle('t', $outputStyle = new OutputFormatterStyle('green',null, ['bold']));
+        $output->writeln("Current Migration Settings:");
+        $output->getFormatter()->setStyle('info', new OutputFormatterStyle('green'));
         $output->writeln("      " . $pad_right("Application Version:") . Application::current()->getVersion());
         $output->writeln("      " . $pad_right("Local Version:") . $migrationSettings->getLocalVersion());
         $output->writeln("      " . $pad_right("Resume Script:") . ($migrationSettings->getResumeScript() ?? 'none'));
