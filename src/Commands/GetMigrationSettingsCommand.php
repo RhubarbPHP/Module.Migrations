@@ -28,6 +28,4 @@ class GetMigrationSettingsCommand extends CustardCommand
         $output->writeln("      Page Size: " . $migrationSettings->pageSize);
         $output->writeln("      Repository Type: " . $migrationSettings->repositoryType);
     }
-
-
 }
