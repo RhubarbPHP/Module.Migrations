@@ -19,6 +19,7 @@
 namespace Rhubarb\Scaffolds\Migrations;
 
 use Rhubarb\Crown\Module;
+use Rhubarb\Scaffolds\Migrations\Commands\GetMigrationSettingsCommand;
 use Rhubarb\Scaffolds\Migrations\Commands\MigrateCommand;
 use Rhubarb\Scaffolds\Migrations\Commands\RunMigrationScriptCommand;
 
@@ -31,7 +32,8 @@ class MigrationsModule extends Module
                 parent::getCustardCommands(),
                 [
                     new MigrateCommand(),
-                    new RunMigrationScriptCommand()
+                    new RunMigrationScriptCommand(),
+                    new GetMigrationSettingsCommand()
                 ]
             );
     }
