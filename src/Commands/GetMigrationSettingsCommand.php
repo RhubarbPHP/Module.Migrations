@@ -20,12 +20,16 @@ class GetMigrationSettingsCommand extends CustardCommand
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $output->writeln("<info>Current Migration Settings:</info>");
-        $output->writeln("      Application Version: " . Application::current()->getVersion());
+        $pad_right = function ($str) {
+            return str_pad($str, 25, ' ', STR_PAD_RIGHT);
+        };
         $migrationSettings = MigrationsSettings::singleton();
-        $output->writeln("      Local Version: " . $migrationSettings->getLocalVersion());
-        $output->writeln("      Resume Script: " . $migrationSettings->getResumeScript());
-        $output->writeln("      Page Size: " . $migrationSettings->pageSize);
-        $output->writeln("      Repository Type: " . $migrationSettings->repositoryType);
+
+        $output->writeln("<info>Current Migration Settings:</info>");
+        $output->writeln("      " . $pad_right("Application Version:") . Application::current()->getVersion());
+        $output->writeln("      " . $pad_right("Local Version:") . $migrationSettings->getLocalVersion());
+        $output->writeln("      " . $pad_right("Resume Script:") . ($migrationSettings->getResumeScript() ?? 'none'));
+        $output->writeln("      " . $pad_right("Page Size:") . $migrationSettings->pageSize);
+        $output->writeln("      " . $pad_right("Repository Type:") . $migrationSettings->repositoryType);
     }
 }
