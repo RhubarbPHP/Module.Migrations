@@ -3,6 +3,7 @@
 namespace Rhubarb\Scaffolds\Migrations\Tests\UseCases;
 
 use Rhubarb\Crown\Exceptions\ImplementationException;
+use Rhubarb\Crown\LoginProviders\Exceptions\LoginFailedException;
 use Rhubarb\Scaffolds\Migrations\MigrationsSettings;
 use Rhubarb\Scaffolds\Migrations\Scripts\MigrationScript;
 use Rhubarb\Scaffolds\Migrations\Tests\Fixtures\MigrationsTestCase;
@@ -143,24 +144,19 @@ class MigrateUseCaseTest extends MigrationsTestCase
             4,
             5,
             function () {
-                throw new ImplementationException($msg = "hi i'm an exception");
+                throw new \Error("hi i'm an error");
             }
         );
 
         $this->manager->setMigrationScripts([$failingScript]);
 
-        try {
-            MigrateToVersionUseCase::execute($this->makeEntity(6, 3));
-            $this->fail('Exceptions should be returned if they are thrown.');
-        } catch (ImplementationException $exception) {
-            verify($exception->getMessage())->equals("hi i'm an exception");
-        }
+        MigrateToVersionUseCase::execute($this->makeEntity(6, 3));
         verify($this->settings->getResumeScript())->equals(get_class($failingScript));
     }
 
     public function testResumeOnScript()
     {
-        foreach (range(1,6) as $number) {
+        foreach (range(1, 6) as $number) {
             $scripts[] = $this->newScript($number, 99, function () {
                 $this->fail('Scripts before the resume point should never run');
             });
@@ -168,7 +164,7 @@ class MigrateUseCaseTest extends MigrationsTestCase
         $scripts[] = new TestMigrationScript();
         $count = 0;
         foreach (range(6, 9) as $number) {
-            $scripts[] = $this->newScript($number, 1, function() use (&$count) {
+            $scripts[] = $this->newScript($number, 1, function () use (&$count) {
                 return $count++;
             });
         }
@@ -178,6 +174,33 @@ class MigrateUseCaseTest extends MigrationsTestCase
         MigrateToVersionUseCase::execute($entity);
 
         verify($count)->equals(4);
+    }
+
+    public function testExecutionStopsOnError()
+    {
+        $msg = "";
+        $this->manager->setMigrationScripts(
+            [
+                $this->newScript(1),
+                $this->newScript(2),
+                $this->newScript(3),
+                $script = $this->newScript(4, 1, function () use (&$msg) {
+                    throw new \Error($msg = "Error Thrown");
+                }),
+                $this->newScript(5, 1, function () {
+                    throw new LoginFailedException("I break things");
+                })
+            ]
+        );
+
+        try {
+            MigrateToVersionUseCase::execute($this->makeEntity(6, 1));
+        } catch (LoginFailedException $exception) {
+            $this->fail("Failed to stop migration on error");
+        }
+
+        verify($msg)->equals("Error Thrown");
+        verify($this->settings->getResumeScript())->equals(get_class($script));
     }
 
     protected static function runMethodAsPublic($method, ...$params)

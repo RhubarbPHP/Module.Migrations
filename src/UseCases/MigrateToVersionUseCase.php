@@ -3,6 +3,7 @@
 
 namespace Rhubarb\Scaffolds\Migrations\UseCases;
 
+use Error;
 use Exception;
 use Rhubarb\Crown\Logging\Log;
 use Rhubarb\Scaffolds\Migrations\MigrationsManager;
@@ -22,13 +23,12 @@ class MigrateToVersionUseCase
         try {
             self::executeMigrationScripts(self::getMigrationScripts($entity));
             self::updateLocalVersion($entity->targetVersion);
-        } catch (Exception $exception) {
-            Log::error("Failed migration from $entity->localVersion  to $entity->targetVersion");
+        } catch (Error $error) {
             Log::outdent();
-            throw $exception;
+            Log::error("Failed migration from $entity->localVersion  to $entity->targetVersion");
         }
-        Log::info("Finished migration from $entity->localVersion  to $entity->targetVersion");
         Log::outdent();
+        Log::info("Finished migration from $entity->localVersion  to $entity->targetVersion");
     }
 
     /**
@@ -41,10 +41,9 @@ class MigrateToVersionUseCase
                 $scriptClass = get_class($migrationScript);
                 Log::info("Executing Script $scriptClass for version {$migrationScript->version()} with priority {$migrationScript->priority()}");
                 $migrationScript->execute();
-            } catch (\Exception $exception) {
+            } catch (Error $error) {
                 MigrationsSettings::singleton()->setResumeScript(get_class($migrationScript));
-                Log::error($exception->getMessage(), "", $exception->getTrace());
-                throw $exception;
+                throw $error;
             }
         }
     }

@@ -4,8 +4,8 @@
 namespace Rhubarb\Scaffolds\Migrations\Tests\Fixtures;
 
 
-use Rhubarb\Crown\Exceptions\ImplementationException;
 use Rhubarb\Scaffolds\Migrations\Scripts\DataMigrationScript;
+use Rhubarb\Stem\Schema\Columns\Column;
 
 class TestDataMigrationScript extends DataMigrationScript
 {
@@ -24,7 +24,6 @@ class TestDataMigrationScript extends DataMigrationScript
      * @param string $columnName
      * @param string $currentValue
      * @param string $newValue
-     * @throws ImplementationException
      */
     public function performEnumUpdate(
         string $modelClass,
@@ -35,12 +34,21 @@ class TestDataMigrationScript extends DataMigrationScript
         $this->updateEnumOption($modelClass, $columnName, $currentValue, $newValue);
     }
 
+    public function performMergeColumns(
+        string $modelClass,
+        array $existingColumns,
+        Column $newColumn,
+        callable $mergeFunction
+    ) {
+        $this->mergeColumns(...func_get_args());
+    }
+
+
     /**
      * @param string   $modelClass
      * @param string   $existingColumnName
      * @param array    $newColumns
      * @param callable $sortFunction
-     * @throws ImplementationException
      */
     public function performSplitColumn(
         string $modelClass,
@@ -49,6 +57,15 @@ class TestDataMigrationScript extends DataMigrationScript
         callable $sortFunction
     ) {
         $this->splitColumn($modelClass, $existingColumnName, $newColumns, $sortFunction);
+    }
+
+    /**
+     * @param string $modelClass
+     * @param string $currentColumnName
+     * @param string $newColumnName
+     */
+    public function performRenameColumn($modelClass, $currentColumnName, $newColumnName) {
+        $this->renameColumn($modelClass, $currentColumnName, $newColumnName);
     }
 
     /**

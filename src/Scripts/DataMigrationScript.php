@@ -3,16 +3,19 @@
 
 namespace Rhubarb\Scaffolds\Migrations\Scripts;
 
+use Error;
 use PHPUnit\Runner\Exception;
-use Rhubarb\Crown\Exceptions\ImplementationException;
 use Rhubarb\Crown\Logging\Log;
 use Rhubarb\Scaffolds\Migrations\MigrationsSettings;
+use Rhubarb\Stem\Collections\Collection;
 use Rhubarb\Stem\Collections\RepositoryCollection;
 use Rhubarb\Stem\Exceptions\FilterNotSupportedException;
 use Rhubarb\Stem\Filters\Equals;
 use Rhubarb\Stem\Filters\Not;
+use Rhubarb\Stem\Filters\OrGroup;
 use Rhubarb\Stem\Models\Model;
 use Rhubarb\Stem\Repositories\MySql\Schema\Columns\MySqlEnumColumn;
+use Rhubarb\Stem\Repositories\Offline\Offline;
 use Rhubarb\Stem\Schema\Columns\Column;
 use Rhubarb\Stem\Schema\ModelSchema;
 
@@ -23,30 +26,36 @@ use Rhubarb\Stem\Schema\ModelSchema;
  */
 abstract class DataMigrationScript implements MigrationScript
 {
-    private $repoSchemas;
+    /** @var string included in error messages when a migration fails for debugging purposes. */
+    protected $currentMigrationType = null;
+
+    protected function setCurrentMigrationType(string $type)
+    {
+        $this->currentMigrationType = $type;
+    }
 
     /**
      * The splitFunctions takes a single variable: the contents of an $existingColumn. It must return an array
      * with that data split into the new columns. The array should return data in the exact same order as the columns
      * provided in $newColumns as that order is used to assign the new values.
      *
-     * Note: The new Columns will also need added to the Model's class!
+     * Note: The new Columns will also need added to the Model's class or they will be lost when the schema is updated
+     * next!
      *
      * @param Model    $model
      * @param string   $existingColumn
      * @param Column[] $newColumns
      * @param callable $splitFunction
-     * @throws ImplementationException
      */
-    protected final function splitColumn(
+    protected function splitColumn(
         string $modelClass,
         string $existingColumn,
         array $newColumns,
         callable $splitFunction
     ) {
-        $type = 'split column';
+        $this->setCurrentMigrationType('split column');
 
-        $model = $this->getModelFromClass($modelClass, $type);
+        $model = $this->getModelFromClass($modelClass);
 
         $this->addColumnsToSchema($model, $newColumns);
         $this->updateRepo($model, $this->getRepoSchema($model));
@@ -54,12 +63,11 @@ abstract class DataMigrationScript implements MigrationScript
         foreach ($model::find(new Not(new Equals($existingColumn, ''))) as $row) {
             $data = $splitFunction($row->$existingColumn);
             if (count($data) != count($newColumns)) {
-                $this->throwError('sort function response',
-                    count($data) . " data returned for " . count($newColumns) . ' columns', $type);
+                $this->error('sort function response',
+                    count($data) . " data returned for " . count($newColumns) . ' columns');
             }
             foreach ($newColumns as $newColumn) {
-                $columnName = $newColumn->columnName;
-                $row->$columnName = array_shift($data);
+                $row->{$newColumn->columnName} = array_shift($data);
             }
             $row->save();
         }
@@ -70,18 +78,17 @@ abstract class DataMigrationScript implements MigrationScript
      * @param string $columnName
      * @param string $currentValue
      * @param string $newValue
-     * @throws ImplementationException
      */
-    protected final function updateEnumOption(
+    protected function updateEnumOption(
         string $modelClass,
         string $columnName,
         string $currentValue,
         string $newValue
     ) {
-        $type = 'update enum option';
+        $this->setCurrentMigrationType('update enum option');
 
         /** @var Model $model */
-        $model = $this->getModelFromClass($modelClass, $type);
+        $model = $this->getModelFromClass($modelClass);
         /** @var ModelSchema $modelSchema */
         $modelSchema = $this->getRepoSchema($model);
 
@@ -89,14 +96,14 @@ abstract class DataMigrationScript implements MigrationScript
             /** @var MySqlEnumColumn $column */
             $column = $modelSchema->getColumns()[$columnName];
         } else {
-            $this->throwError('column name', $columnName, $type);
+            $this->error('column name', $columnName);
         }
         // TODO: There is no base Enum column. This should be replaced with a generic enum class since we do not know it will be used solely on mysql.
         if (!is_a($column, MySqlEnumColumn::class)) {
-            $this->throwError('column type', get_class($column), $type);
+            $this->error('column type', get_class($column));
         }
         if (!in_array($currentValue, $column->enumValues)) {
-            $this->throwError('current value', $currentValue, $type);
+            $this->error('current value', $currentValue);
         }
 
         Log::info("Updating $columnName in $modelClass to replace $currentValue with $newValue");
@@ -111,54 +118,156 @@ abstract class DataMigrationScript implements MigrationScript
     }
 
     /**
-     * @param Model  $model
-     * @param string $columnName
-     * @param string $currentValue
-     * @param string $newValue
-     * @throws ImplementationException
+     * @param string   $modelClass
+     * @param string[] $existingColumnNames
+     * @param Column   $newColumn
+     * @param callable $mergeFunction
      */
-    protected function replaceValueInColumn(Model $model, string $columnName, $currentValue, $newValue)
+    protected function mergeColumns(
+        string $modelClass,
+        array $existingColumnNames,
+        Column $newColumn,
+        callable $mergeFunction
+    ) {
+        $this->setCurrentMigrationType('merge columns');
+        $model = $this->getModelFromClass($modelClass);
+        $this->confirmColumnsInSchema($existingColumnNames, $model->getSchema());
+        $this->addColumnsToSchema($model, [$newColumn]);
+        $this->updateRepo($model);
+
+        $newColumnName = $newColumn->columnName;
+        // Only do rows that have some value in at least one of the existing columns
+        foreach ($existingColumnNames as $existingColumnName) {
+            $filters[] = new Not(new Equals($existingColumnName, ''));
+        }
+        $this->pagedUpdate(
+            $model::find(new OrGroup($filters)),
+            function (Model $row) use ($existingColumnNames, $newColumnName, $mergeFunction) {
+                foreach ($existingColumnNames as $columnName) {
+                    $existingData[] = $row->$columnName;
+                }
+                $row->{$newColumnName} = $mergeFunction(...$existingData);
+                $row->save();
+            });
+    }
+
+    /**
+     * @param string      $columnName
+     * @param ModelSchema $schema
+     */
+    protected function confirmColumnInSchema(string $columnName, ModelSchema $schema)
+    {
+        if (array_key_exists($columnName, $schema->getColumns()) === false) {
+            $this->error('column name', $columnName);
+        }
+    }
+
+    /**
+     * @param string[]    $columnNames
+     * @param ModelSchema $modelSchema
+     */
+    protected function confirmColumnsInSchema(array $columnNames, ModelSchema $modelSchema)
+    {
+        foreach ($columnNames as $columnName) {
+            $this->confirmColumnInSchema($columnName, $modelSchema);
+        }
+    }
+
+    /**
+     * @param Column[] $columns
+     * @return string[]
+     */
+    protected function getColumnNamesForColumns(array $columns): array
+    {
+        return array_map(function ($column) {
+            return $column->columnName;
+        }, $columns);
+    }
+
+    /**
+     * @param string $modelClass
+     * @param string $currentColumnName
+     * @param string $newColumnName
+     */
+    protected function renameColumn(string $modelClass, $currentColumnName, $newColumnName)
+    {
+        $this->setCurrentMigrationType('rename column');
+        $model = $this->getModelFromClass($modelClass);
+        $this->confirmColumnInSchema($currentColumnName, $model->getSchema());
+        $newColumn = clone $model->getSchema()->getColumns()[$currentColumnName];
+        $newColumn->columnName = $newColumnName;
+        $this->addColumnsToSchema($model, [$newColumn]);
+        $this->updateRepo($model);
+        $this->pagedUpdate(
+            $model::find(new Not(new Equals($currentColumnName, ''))),
+            function (Model $row) use ($currentColumnName, $newColumnName) {
+                $row->$newColumnName = $row->$currentColumnName;
+                $row->save();
+            }
+        );
+    }
+
+    /**
+     * @param Collection $collection
+     * @param callable   $loopedFunction
+     */
+    protected function pagedUpdate(Collection $collection, callable $loopedFunction)
     {
         $pageSize = MigrationsSettings::singleton()->pageSize;
-        $modelClass = get_class($model);
-
-        $collection = new RepositoryCollection($modelClass);
         $count = $collection->count();
-        try {
-            $collection->filter([new Equals($columnName, $currentValue)]);
-        } catch (FilterNotSupportedException $e) {
-            $this->throwError("filter", "could not filter model $modelClass for value $currentValue", 'value update');
-        }
 
         $collection->enableRanging();
         $collection->setRange($startIndex = 0, $pageSize);
         $collection->markRangeApplied();
         while ($startIndex < $count) {
             foreach ($collection as $row) {
-                $row->$columnName = $newValue;
-                $row->save();
+                $loopedFunction($row);
+            }
+            if (get_class($repo = $collection->getRepository()) !== Offline::class) {
+                $repo->clearObjectCache();
             }
             $collection->setRange($startIndex += $pageSize, $pageSize);
         }
     }
 
     /**
+     * @param Model  $model
+     * @param string $columnName
+     * @param string $currentValue
+     * @param string $newValue
+     */
+    protected function replaceValueInColumn(Model $model, string $columnName, $currentValue, $newValue)
+    {
+        $collection = new RepositoryCollection(get_class($model));
+        try {
+            $collection->filter([new Equals($columnName, $currentValue)]);
+        } catch (FilterNotSupportedException $e) {
+            $this->error(
+                "filter",
+                "could not filter model " . get_class($model) . " for value $currentValue"
+            );
+        }
+
+        $this->pagedUpdate($collection, function (Model $row) use ($columnName, $newValue) {
+            $row->$columnName = $newValue;
+            $row->save();
+        });
+    }
+
+    /**
      * @param Model $model
      * @return ModelSchema
      */
-    private function getRepoSchema(Model $model)
+    protected final function getRepoSchema(Model $model)
     {
-        if ($this->repoSchemas[$model->getModelName()]) {
-            return $this->repoSchemas[$model->getModelName()];
-        }
-        return ($this->repoSchemas[$model->getModelName()] = $model->getRepository()->getRepositorySchema());
+        return $model->getRepository()->getRepositorySchema();
     }
 
     /**
      * @param ModelSchema $modelSchema
-     * @param array       $columns
+     * @param Column[]    $columns
      */
-    private function addColumnsToSchema(Model $model, array $columns)
+    protected final function addColumnsToSchema(Model $model, array $columns)
     {
         foreach ($columns as $newColumn) {
             $this->getRepoSchema($model)->addColumn($newColumn);
@@ -168,35 +277,37 @@ abstract class DataMigrationScript implements MigrationScript
 
     /**
      * @param Model            $model
-     * @param ModelSchema|null $modelSchema
+     * @param ModelSchema|null $repoSchema
      */
-    private final function updateRepo(Model $model, ModelSchema $modelSchema = null)
+    protected final function updateRepo(Model $model, ModelSchema $repoSchema = null)
     {
-        ($modelSchema ?? $model->getRepository()->getRepositorySchema())->checkSchema($model->getRepository());
+        ($repoSchema ?? $model->getRepository()->getRepositorySchema())->checkSchema($model->getRepository());
     }
 
     /**
+     * MUST throw an Error to stop MigrationScripts being executed.
+     *
      * @param string $nameOfInvalidParam
      * @param string $invalidParam
-     * @param string $typeOfDataMigration
-     * @throws ImplementationException
+     * @throws Error
      */
-    private function throwError($nameOfInvalidParam, $invalidParam, $typeOfDataMigration)
+    protected function error(string $nameOfInvalidParam, string $invalidParam)
     {
-        $msg = "Invalid $nameOfInvalidParam provided in $typeOfDataMigration operation: $invalidParam";
+        $msg =
+            "Data Migration Error: Invalid $nameOfInvalidParam provided in {$this->currentMigrationType} operation"
+            . ($invalidParam !== null ? " of value $invalidParam" : '');
         Log::error($msg);
-        throw new ImplementationException($msg);
+        throw new Error($msg);
     }
 
     /**
-     * @param string      $modelClass
-     * @param string|null $type
-     * @throws ImplementationException
+     * @param string $modelClass
+     * @return Model
      */
-    private function getModelFromClass(string $modelClass, string $type = null)
+    protected function getModelFromClass(string $modelClass): Model
     {
-        $error = function () use ($modelClass, $type) {
-            $this->throwError('model class', $modelClass, $type ?? '');
+        $error = function () use ($modelClass) {
+            $this->error('model class', $modelClass);
         };
 
         if (!class_exists($modelClass)) {
