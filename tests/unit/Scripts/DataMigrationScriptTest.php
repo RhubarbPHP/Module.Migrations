@@ -108,10 +108,11 @@ class DataMigrationScriptTest extends MigrationsTestCase
 
     public function testPaging()
     {
-        $this->populateUsers(701);
+        $this->settings->pageSize = 50;
+        $this->populateUsers(201);
         (new TestDataMigrationScript())->performEnumUpdate(TestUser::class, 'status', 'affline', 'offline');
-        verify(TestUser::find(new Equals('status', 'online'))->count())->equals(350);
-        verify(TestUser::find(new Equals('status', 'offline'))->count())->equals(351);
+        verify(TestUser::find(new Equals('status', 'online'))->count())->equals(100);
+        verify(TestUser::find(new Equals('status', 'offline'))->count())->equals(101);
     }
 
     /**

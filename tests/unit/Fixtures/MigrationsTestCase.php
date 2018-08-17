@@ -12,7 +12,6 @@ use Rhubarb\Stem\Models\Model;
 use Rhubarb\Stem\Repositories\Offline\Offline;
 use Rhubarb\Stem\Repositories\Repository;
 use Rhubarb\Stem\Schema\SolutionSchema;
-use Rhubarb\Stem\Tests\unit\Fixtures\UnitTestingSolutionSchema;
 
 class MigrationsTestCase extends RhubarbTestCase
 {
@@ -35,6 +34,7 @@ class MigrationsTestCase extends RhubarbTestCase
         $this->manager = MigrationsManager::getMigrationsManager();
         $this->settings = MigrationsSettings::singleton();
 
+        $this->settings->pageSize = 100;
         $this->settings->repositoryType = Offline::class;
 
         return $parent;
