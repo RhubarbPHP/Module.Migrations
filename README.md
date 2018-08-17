@@ -1,4 +1,4 @@
-Application Versions
+Migrations Module
 ====================
 
 Commonly, when applications are upgraded there are breaking changes that require a scripted solution. This module provides a framework to: quickly generate migration scripts; manage the local version of an instance of your application, and; run migration scripts in order to bring your local version up-to-date with the current project version. 
