@@ -21,18 +21,34 @@ class GetMigrationSettingsCommand extends CustardCommand
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $pad_right = function ($str) {
-            return str_pad($str, 25, ' ', STR_PAD_RIGHT);
+        $padr = function ($str, $padlen = 25) {
+            return str_pad($str, $padlen, ' ', STR_PAD_RIGHT);
         };
         $migrationSettings = MigrationsSettings::singleton();
 
-        $output->getFormatter()->setStyle('t', $outputStyle = new OutputFormatterStyle('green',null, ['bold']));
-        $output->writeln("Current Migration Settings:");
-        $output->getFormatter()->setStyle('info', new OutputFormatterStyle('green'));
-        $output->writeln("      " . $pad_right("Application Version:") . Application::current()->getVersion());
-        $output->writeln("      " . $pad_right("Local Version:") . $migrationSettings->getLocalVersion());
-        $output->writeln("      " . $pad_right("Resume Script:") . ($migrationSettings->getResumeScript() ?? 'none'));
-        $output->writeln("      " . $pad_right("Page Size:") . $migrationSettings->pageSize);
-        $output->writeln("      " . $pad_right("Repository Type:") . $migrationSettings->repositoryType);
+        $tag = function ($string, $tag) {
+            return "<$tag>$string</$tag>";
+        };
+
+        $output->getFormatter()->setStyle('b', new OutputFormatterStyle('green', null, ['bold', 'underscore']));
+        $output->writeln(
+            $tag("Current Migration Settings:", 'b')
+        );
+        $output->getFormatter()->setStyle('i', new OutputFormatterStyle('green'));
+        $output->writeln(
+            $tag($padr("Application Version:") . Application::current()->getVersion(), "i")
+        );
+        $output->writeln(
+            $tag($padr("Local Version:") . $migrationSettings->getLocalVersion(), 'i')
+        );
+        $output->writeln(
+            $tag($padr("Resume Script:") . ($migrationSettings->getResumeScript() ?? 'none'), 'i')
+        );
+        $output->writeln(
+            $tag($padr("Page Size:") . $migrationSettings->pageSize, 'i')
+        );
+        $output->writeln(
+            $tag($padr("Repository Type:") . $migrationSettings->repositoryType, 'i')
+        );
     }
 }
