@@ -8,6 +8,8 @@ use Rhubarb\Scaffolds\Migrations\Scripts\MigrationScript;
 
 class TestMigrationScript implements MigrationScript
 {
+    public $execute = null;
+
     /**
      * Primary logic of the script should be implemented or called here.
      *
@@ -15,7 +17,10 @@ class TestMigrationScript implements MigrationScript
      */
     public function execute()
     {
-        return null;
+        if (is_callable($this->execute)) {
+            return $this->execute()();
+        }
+        return $this->execute;
     }
 
     /**

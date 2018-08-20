@@ -176,6 +176,22 @@ class MigrateUseCaseTest extends MigrationsTestCase
         verify($count)->equals(4);
     }
 
+    public function testSkipScripts() {
+        foreach (range(1, 6) as $number) {
+            $scripts[] = $this->newScript($number);
+        }
+        $failScript = new TestMigrationScript();
+        $failScript->execute = function () {
+            $this->fail('This script should not be run!');
+        };
+
+        $this->settings->setLocalVersion(1);
+        $this->manager->setMigrationScripts($scripts);
+        $entity = $this->makeEntity(7, 1);
+        $entity->skipScripts[] = TestMigrationScript::class;
+        MigrateToVersionUseCase::execute($entity);
+    }
+
     public function testExecutionStopsOnError()
     {
         $msg = "";
