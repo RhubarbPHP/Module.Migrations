@@ -1,9 +1,10 @@
 <?php
 
-namespace Rhubarb\Scaffolds\Migrations;
+namespace Rhubarb\Modules\Migrations\Tests;
 
-use Rhubarb\Scaffolds\Migrations\Tests\Fixtures\MigrationsTestCase;
-use Rhubarb\Scaffolds\Migrations\Tests\Fixtures\TestMigrationsManager;
+use Rhubarb\Modules\Migrations\MigrationsSettings;
+use Rhubarb\Modules\Migrations\Tests\Fixtures\MigrationsTestCase;
+use Rhubarb\Modules\Migrations\Tests\Fixtures\TestMigrationsManager;
 
 class MigrationsSettingsTest extends MigrationsTestCase
 {
@@ -51,7 +52,8 @@ class MigrationsSettingsTest extends MigrationsTestCase
         verify($this->settings->getResumeScript())->null();
     }
 
-    public function testChangingFileLocation() {
+    public function testChangingFileLocation()
+    {
         $this->settings->setLocalVersion(1);
         verify(file_get_contents($this->settings->getLocalVersionFilePath()))->equals(1);
         $oldLocPath = $this->settings->getLocalVersionFilePath();

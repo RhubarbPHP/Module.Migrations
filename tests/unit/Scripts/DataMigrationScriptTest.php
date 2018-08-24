@@ -1,15 +1,15 @@
 <?php
 
 
-namespace Rhubarb\Scaffolds\Migrations\Tests\Scripts;
+namespace Rhubarb\Modules\Migrations\Tests\Scripts;
 
 
 use Rhubarb\Crown\Exceptions\ImplementationException;
-use Rhubarb\Scaffolds\Migrations\MigrationsSettings;
-use Rhubarb\Scaffolds\Migrations\Tests\Fixtures\MigrationsTestCase;
-use Rhubarb\Scaffolds\Migrations\Tests\Fixtures\TestDataMigrationScript;
-use Rhubarb\Scaffolds\Migrations\Tests\Fixtures\TestMigrationsManager;
-use Rhubarb\Scaffolds\Migrations\Tests\Fixtures\TestUser;
+use Rhubarb\Modules\Migrations\MigrationsSettings;
+use Rhubarb\Modules\Migrations\Tests\Fixtures\MigrationsTestCase;
+use Rhubarb\Modules\Migrations\Tests\Fixtures\TestDataMigrationScript;
+use Rhubarb\Modules\Migrations\Tests\Fixtures\TestMigrationsManager;
+use Rhubarb\Modules\Migrations\Tests\Fixtures\TestUser;
 use Rhubarb\Stem\Filters\Equals;
 use Rhubarb\Stem\Schema\Columns\StringColumn;
 

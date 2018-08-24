@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Rhubarb\Scaffolds\Migrations;
+namespace Rhubarb\Modules\Migrations;
 
 
 use Rhubarb\Crown\Application;

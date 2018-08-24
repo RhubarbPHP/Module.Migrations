@@ -1,16 +1,16 @@
 <?php /** @noinspection PhpUnhandledExceptionInspection */
 
-namespace Rhubarb\Scaffolds\Migrations\Tests\UseCases;
+namespace Rhubarb\Modules\Migrations\Tests\UseCases;
 
 use Rhubarb\Crown\Exceptions\ImplementationException;
 use Rhubarb\Crown\LoginProviders\Exceptions\LoginFailedException;
-use Rhubarb\Scaffolds\Migrations\MigrationsSettings;
-use Rhubarb\Scaffolds\Migrations\Scripts\MigrationScriptInterface;
-use Rhubarb\Scaffolds\Migrations\Tests\Fixtures\MigrationsTestCase;
-use Rhubarb\Scaffolds\Migrations\Tests\Fixtures\TestMigrationScript;
-use Rhubarb\Scaffolds\Migrations\Tests\Fixtures\TestMigrationsManager;
-use Rhubarb\Scaffolds\Migrations\UseCases\MigrateToVersionUseCase;
-use Rhubarb\Scaffolds\Migrations\UseCases\MigrationEntity;
+use Rhubarb\Modules\Migrations\MigrationsSettings;
+use Rhubarb\Modules\Migrations\Scripts\MigrationScriptInterface;
+use Rhubarb\Modules\Migrations\Tests\Fixtures\MigrationsTestCase;
+use Rhubarb\Modules\Migrations\Tests\Fixtures\TestMigrationScript;
+use Rhubarb\Modules\Migrations\Tests\Fixtures\TestMigrationsManager;
+use Rhubarb\Modules\Migrations\UseCases\MigrateToVersionUseCase;
+use Rhubarb\Modules\Migrations\UseCases\MigrationEntity;
 
 class MigrateUseCaseTest extends MigrationsTestCase
 {

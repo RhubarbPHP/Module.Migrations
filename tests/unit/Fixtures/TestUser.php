@@ -1,6 +1,6 @@
 <?php
 
-namespace Rhubarb\Scaffolds\Migrations\Tests\Fixtures;
+namespace Rhubarb\Modules\Migrations\Tests\Fixtures;
 
 use Rhubarb\Stem\Models\Model;
 use Rhubarb\Stem\Repositories\MySql\Schema\Columns\MySqlEnumColumn;
@@ -20,7 +20,7 @@ use Rhubarb\Stem\Schema\ModelSchema;
  * @property string $address
  * @property string $_address
  *
- * @package Rhubarb\Scaffolds\Migrations\Tests\Fixtures
+ * @package Rhubarb\Modules\Migrations\Tests\Fixtures
  */
 class TestUser extends Model
 {

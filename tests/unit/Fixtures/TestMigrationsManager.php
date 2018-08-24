@@ -1,11 +1,11 @@
 <?php
 
 
-namespace Rhubarb\Scaffolds\Migrations\Tests\Fixtures;
+namespace Rhubarb\Modules\Migrations\Tests\Fixtures;
 
 
-use Rhubarb\Scaffolds\Migrations\MigrationsManager;
-use Rhubarb\Scaffolds\Migrations\Scripts\MigrationScriptInterface;
+use Rhubarb\Modules\Migrations\MigrationsManager;
+use Rhubarb\Modules\Migrations\Scripts\MigrationScriptInterface;
 
 class TestMigrationsManager extends MigrationsManager
 {

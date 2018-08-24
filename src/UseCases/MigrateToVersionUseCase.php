@@ -1,14 +1,14 @@
 <?php
 
 
-namespace Rhubarb\Scaffolds\Migrations\UseCases;
+namespace Rhubarb\Modules\Migrations\UseCases;
 
 use Error;
 use Exception;
 use Rhubarb\Crown\Logging\Log;
-use Rhubarb\Scaffolds\Migrations\MigrationsManager;
-use Rhubarb\Scaffolds\Migrations\MigrationsSettings;
-use Rhubarb\Scaffolds\Migrations\Scripts\MigrationScriptInterface;
+use Rhubarb\Modules\Migrations\MigrationsManager;
+use Rhubarb\Modules\Migrations\MigrationsSettings;
+use Rhubarb\Modules\Migrations\Scripts\MigrationScriptInterface;
 
 class MigrateToVersionUseCase
 {

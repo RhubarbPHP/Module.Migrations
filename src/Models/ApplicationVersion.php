@@ -1,7 +1,8 @@
 <?php
 
-namespace Rhubarb\Scaffolds\Migrations\Models;
+namespace Rhubarb\Modules\Migrations\Models;
 
+use Rhubarb\Crown\Xml\Node;
 use Rhubarb\Stem\Models\Model;
 use Rhubarb\Stem\Schema\Columns\AutoIncrementColumn;
 use Rhubarb\Stem\Schema\ModelSchema;

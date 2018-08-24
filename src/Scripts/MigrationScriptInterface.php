@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Rhubarb\Scaffolds\Migrations\Scripts;
+namespace Rhubarb\Modules\Migrations\Scripts;
 
 
 interface MigrationScriptInterface

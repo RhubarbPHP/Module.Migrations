@@ -1,16 +1,16 @@
 <?php
 
 
-namespace Rhubarb\Scaffolds\Migrations\Commands;
+namespace Rhubarb\Modules\Migrations\Commands;
 
 
 use PHPUnit\Runner\Exception;
 use Rhubarb\Crown\Application;
 use Rhubarb\Crown\Exceptions\ImplementationException;
 use Rhubarb\Custard\Command\CustardCommand;
-use Rhubarb\Scaffolds\Migrations\MigrationsSettings;
-use Rhubarb\Scaffolds\Migrations\UseCases\MigrateToVersionUseCase;
-use Rhubarb\Scaffolds\Migrations\UseCases\MigrationEntity;
+use Rhubarb\Modules\Migrations\MigrationsSettings;
+use Rhubarb\Modules\Migrations\UseCases\MigrateToVersionUseCase;
+use Rhubarb\Modules\Migrations\UseCases\MigrationEntity;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
