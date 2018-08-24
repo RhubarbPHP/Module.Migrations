@@ -43,7 +43,7 @@ class RunMigrationScriptCommand extends CustardCommand
             return;
         }
 
-        if (!($script instanceof MigrationsSettings)) {
+        if (!($script instanceof MigrationScriptInterface)) {
             $output->writeln('Provided class does not implement Migration Script');
             return;
         }

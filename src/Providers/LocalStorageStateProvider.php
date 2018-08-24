@@ -1,33 +1,22 @@
 <?php
 
-namespace Rhubarb\Modules\Migrations;
+
+namespace Rhubarb\Modules\Migrations\Providers;
+
 
 use Rhubarb\Crown\Exceptions\ImplementationException;
-use Rhubarb\Crown\Settings;
-use Rhubarb\Stem\Repositories\MySql\MySql;
+use Rhubarb\Modules\Migrations\MigrationsStateProvider;
 
-class MigrationsSettings extends Settings
+class LocalStorageStateProvider extends MigrationsStateProvider
 {
     const
         DEFAULT_LOCAL_VERSION_FILE = 'local-version.lock',
         DEFAULT_RESUME_SCRIPT_FILE = 'resume-script.lock';
 
-    /** @var int $localVersion */
-    public $localVersion;
     /** @var string $localVersionPath */
     public $localVersionPath;
-    /** @var string $resumeScript */
-    public $resumeScript;
     /** @var string $resumeScriptPath */
     public $resumeScriptPath;
-    /**
-     * Used when updating values in a table.
-     *
-     * @var int $pageSize
-     */
-    public $pageSize = 100;
-
-    public $repositoryType = MySql::class;
 
     protected function initialiseDefaultValues()
     {
@@ -77,9 +66,9 @@ class MigrationsSettings extends Settings
     }
 
     /**
-     * @return null|string
+     * @return string
      */
-    public function getResumeScript()
+    public function getResumeScript(): string
     {
         if ($this->resumeScript) {
             return $this->resumeScript;
@@ -87,19 +76,23 @@ class MigrationsSettings extends Settings
             if (file_exists($this->getResumeScriptFilePath())) {
                 $this->resumeScript = file_get_contents($this->getResumeScriptFilePath());
                 return $this->resumeScript;
-            } else {
-                return null;
             }
         }
+        return null;
     }
 
     /**
      * @param string $resumeScript
      */
-    public function setResumeScript(string $resumeScript): void
+    public function setResumeScript(string $resumeScript = null): void
     {
-        file_put_contents($this->getResumeScriptFilePath(), $resumeScript);
-        $this->resumeScript = $resumeScript;
+        if (is_null($resumeScript)) {
+            $this->resumeScript = null;
+            unlink($this->resumeScriptPath);
+        } else {
+            file_put_contents($this->getResumeScriptFilePath(), $resumeScript);
+            $this->resumeScript = $resumeScript;
+        }
     }
 
     /**
@@ -128,6 +121,10 @@ class MigrationsSettings extends Settings
         $this->resumeScriptPath = $resumeScriptPath;
     }
 
+    /**
+     * @param $oldPath
+     * @param $newPath
+     */
     private function moveLocalFile($oldPath, $newPath)
     {
         if (file_get_contents($this->localVersionPath) !== false) {
@@ -138,5 +135,4 @@ class MigrationsSettings extends Settings
 
 
     }
-
 }

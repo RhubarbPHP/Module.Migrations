@@ -6,6 +6,7 @@ namespace Rhubarb\Modules\Migrations\UseCases;
 
 use Rhubarb\Modules\Migrations\MigrationsManager;
 use Rhubarb\Modules\Migrations\MigrationsSettings;
+use Rhubarb\Modules\Migrations\MigrationsStateProvider;
 
 class MigrationEntity
 {
@@ -20,6 +21,6 @@ class MigrationEntity
 
     public function __construct()
     {
-        $this->localVersion = MigrationsSettings::singleton()->getLocalVersion();
+        $this->localVersion = MigrationsStateProvider::getProvider()->getLocalVersion();
     }
 }

@@ -3,14 +3,15 @@
 namespace Rhubarb\Modules\Migrations\Tests;
 
 use Rhubarb\Modules\Migrations\MigrationsSettings;
+use Rhubarb\Modules\Migrations\MigrationsStateProvider;
 use Rhubarb\Modules\Migrations\Tests\Fixtures\MigrationsTestCase;
 use Rhubarb\Modules\Migrations\Tests\Fixtures\TestMigrationsManager;
 
-class MigrationsSettingsTest extends MigrationsTestCase
+class MigrationsStateProviderTest extends MigrationsTestCase
 {
     /** @var TestMigrationsManager $manger */
     protected $manager;
-    /** @var MigrationsSettings $settings */
+    /** @var MigrationsStateProvider $settings */
     protected $settings;
 
     public function testLocalVersion()

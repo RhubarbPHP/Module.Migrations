@@ -13,9 +13,9 @@ abstract class MigrationsStateProvider implements ProviderInterface
     use ProviderTrait;
 
     /** @var int $localVersion */
-    private $localVersion;
+    protected $localVersion;
     /** @var string $resumeScript */
-    private $resumeScript;
+    protected $resumeScript;
 
     /**
      * @return int
@@ -32,10 +32,7 @@ abstract class MigrationsStateProvider implements ProviderInterface
      */
     abstract public function getResumeScript(): string;
 
-    /**
-     * @param $newResumeScript
-     */
-    abstract public function setResumeScript($newResumeScript): void;
+    abstract public function setResumeScript(): void;
 
     public function getApplicationVersion(): int
     {
