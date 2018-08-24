@@ -14,8 +14,6 @@ abstract class MigrationsStateProvider implements ProviderInterface
 
     /** @var int $localVersion */
     protected $localVersion;
-    /** @var string $resumeScript */
-    protected $resumeScript;
 
     /**
      * @return int
@@ -26,13 +24,6 @@ abstract class MigrationsStateProvider implements ProviderInterface
      * @param int $newLocalVersion
      */
     abstract public function setLocalVersion(int $newLocalVersion): void;
-
-    /**
-     * @return string
-     */
-    abstract public function getResumeScript(): string;
-
-    abstract public function setResumeScript(): void;
 
     public function getApplicationVersion(): int
     {
