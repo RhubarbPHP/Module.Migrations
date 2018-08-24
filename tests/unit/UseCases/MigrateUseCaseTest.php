@@ -5,7 +5,7 @@ namespace Rhubarb\Scaffolds\Migrations\Tests\UseCases;
 use Rhubarb\Crown\Exceptions\ImplementationException;
 use Rhubarb\Crown\LoginProviders\Exceptions\LoginFailedException;
 use Rhubarb\Scaffolds\Migrations\MigrationsSettings;
-use Rhubarb\Scaffolds\Migrations\Scripts\MigrationScript;
+use Rhubarb\Scaffolds\Migrations\Scripts\MigrationScriptInterface;
 use Rhubarb\Scaffolds\Migrations\Tests\Fixtures\MigrationsTestCase;
 use Rhubarb\Scaffolds\Migrations\Tests\Fixtures\TestMigrationScript;
 use Rhubarb\Scaffolds\Migrations\Tests\Fixtures\TestMigrationsManager;
@@ -35,7 +35,7 @@ class MigrateUseCaseTest extends MigrationsTestCase
         $entity->localVersion = 1;
         $entity->targetVersion = 1000;
 
-        /** @var MigrationScript[] $migrationScripts */
+        /** @var MigrationScriptInterface[] $migrationScripts */
         $migrationScripts = self::runMethodAsPublic('getMigrationScripts', $entity);
         verify($migrationScripts)->isEmpty();
 
@@ -239,7 +239,7 @@ class MigrateUseCaseTest extends MigrationsTestCase
      */
     protected function newScript($version = null, $priority = null, $execute = null)
     {
-        $script = $this->createMock(MigrationScript::class);
+        $script = $this->createMock(MigrationScriptInterface::class);
         if (isset($version)) {
             $script->method('version')->willReturn($version);
         }

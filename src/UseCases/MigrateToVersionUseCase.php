@@ -8,7 +8,7 @@ use Exception;
 use Rhubarb\Crown\Logging\Log;
 use Rhubarb\Scaffolds\Migrations\MigrationsManager;
 use Rhubarb\Scaffolds\Migrations\MigrationsSettings;
-use Rhubarb\Scaffolds\Migrations\Scripts\MigrationScript;
+use Rhubarb\Scaffolds\Migrations\Scripts\MigrationScriptInterface;
 
 class MigrateToVersionUseCase
 {
@@ -32,7 +32,7 @@ class MigrateToVersionUseCase
     }
 
     /**
-     * @param MigrationScript[] $migrationScripts
+     * @param MigrationScriptInterface[] $migrationScripts
      */
     private static function executeMigrationScripts($migrationScripts)
     {
@@ -59,7 +59,7 @@ class MigrateToVersionUseCase
     /**
      * @param int $currentVersion
      * @param int $targetVersion
-     * @return MigrationScript[] array
+     * @return MigrationScriptInterface[] array
      * @throws \Rhubarb\Crown\Exceptions\ImplementationException
      */
     private static function getMigrationScripts(MigrationEntity $entity): array
@@ -85,7 +85,7 @@ class MigrateToVersionUseCase
             return [];
         }
 
-        usort($migrationScripts, function (MigrationScript $a, MigrationScript $b) {
+        usort($migrationScripts, function (MigrationScriptInterface $a, MigrationScriptInterface $b) {
             if ($a->version() != $b->version()) {
                 return $a->version() <=> $b->version();
             } else {
@@ -93,8 +93,8 @@ class MigrateToVersionUseCase
             }
         });
 
-        /** @var MigrationScript $resume */
-        if ($entity->resumeScript && is_a($resume = new $entity->resumeScript(), MigrationScript::class)) {
+        /** @var MigrationScriptInterface $resume */
+        if ($entity->resumeScript && is_a($resume = new $entity->resumeScript(), MigrationScriptInterface::class)) {
             $key = array_search($entity->resumeScript, array_map('get_class', $migrationScripts));
             array_splice($migrationScripts, 0, $key);
         }

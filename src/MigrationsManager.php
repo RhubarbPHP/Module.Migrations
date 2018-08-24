@@ -7,7 +7,7 @@ namespace Rhubarb\Scaffolds\Migrations;
 use Rhubarb\Crown\Application;
 use Rhubarb\Crown\DependencyInjection\SingletonTrait;
 use Rhubarb\Crown\Exceptions\ImplementationException;
-use Rhubarb\Scaffolds\Migrations\Scripts\MigrationScript;
+use Rhubarb\Scaffolds\Migrations\Scripts\MigrationScriptInterface;
 
 class MigrationsManager
 {
@@ -16,14 +16,14 @@ class MigrationsManager
     /** @var string[] $migrationScriptClasses */
     protected $migrationScriptClasses = [];
 
-    /** @var MigrationScript[] $migrationScripts */
+    /** @var MigrationScriptInterface[] $migrationScripts */
     protected $migrationScripts = [];
 
     /** @var boolean $scriptsInstantiated */
     protected $scriptsInstantiated = false;
 
     /**
-     * @return MigrationScript[]
+     * @return MigrationScriptInterface[]
      * @throws ImplementationException
      */
     public function getMigrationScripts(): array
@@ -33,7 +33,7 @@ class MigrationsManager
         }
 
         foreach ($this->migrationScripts as $migrationScript) {
-            if (is_a($migrationScript, MigrationScript::class)) {
+            if (is_a($migrationScript, MigrationScriptInterface::class)) {
                 $migrationScripts[] = $migrationScript;
             } else {
                 throw new ImplementationException('Non-MigrationScript Class provided to MigrationManager');

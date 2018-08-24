@@ -7,7 +7,7 @@ namespace Rhubarb\Scaffolds\Migrations\Commands;
 use Rhubarb\Custard\Command\CustardCommand;
 use Rhubarb\Scaffolds\Migrations\MigrationsManager;
 use Rhubarb\Scaffolds\Migrations\MigrationsSettings;
-use Rhubarb\Scaffolds\Migrations\Scripts\MigrationScript;
+use Rhubarb\Scaffolds\Migrations\Scripts\MigrationScriptInterface;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -36,7 +36,7 @@ class RunMigrationScriptCommand extends CustardCommand
         }
 
         if (class_exists($scriptClass)) {
-            /** @var MigrationScript $script */
+            /** @var MigrationScriptInterface $script */
             $script = new $scriptClass();
         } else {
             $output->writeln('Unknown script class provided');

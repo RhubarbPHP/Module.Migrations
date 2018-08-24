@@ -24,7 +24,7 @@ use Rhubarb\Stem\Schema\ModelSchema;
  *
  * @package Rhubarb\Scaffolds\Migrations\Scripts
  */
-abstract class DataMigrationScript implements MigrationScript
+abstract class DataMigrationScript implements MigrationScriptInterface
 {
     /** @var string included in error messages when a migration fails for debugging purposes. */
     protected $currentMigrationType = null;

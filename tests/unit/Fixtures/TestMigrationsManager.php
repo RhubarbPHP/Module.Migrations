@@ -5,12 +5,12 @@ namespace Rhubarb\Scaffolds\Migrations\Tests\Fixtures;
 
 
 use Rhubarb\Scaffolds\Migrations\MigrationsManager;
-use Rhubarb\Scaffolds\Migrations\Scripts\MigrationScript;
+use Rhubarb\Scaffolds\Migrations\Scripts\MigrationScriptInterface;
 
 class TestMigrationsManager extends MigrationsManager
 {
     /**@deprecated should only be used for testing
-     * @param MigrationScript[] $migrationScripts
+     * @param MigrationScriptInterface[] $migrationScripts
      */
     public function setMigrationScripts(array $migrationScripts)
     {

@@ -4,7 +4,7 @@
 namespace Rhubarb\Scaffolds\Migrations\Scripts;
 
 
-interface MigrationScript
+interface MigrationScriptInterface
 {
     /**
      * Primary logic of the script should be implemented or called here.

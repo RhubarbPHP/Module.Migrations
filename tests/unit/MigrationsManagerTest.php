@@ -3,7 +3,7 @@
 namespace Rhubarb\Scaffolds\Migrations;
 
 use Rhubarb\Crown\Exceptions\ImplementationException;
-use Rhubarb\Scaffolds\Migrations\Scripts\MigrationScript;
+use Rhubarb\Scaffolds\Migrations\Scripts\MigrationScriptInterface;
 use Rhubarb\Scaffolds\Migrations\Tests\Fixtures\MigrationsTestCase;
 use Rhubarb\Scaffolds\Migrations\Tests\Fixtures\TestMigrationScript;
 use Rhubarb\Scaffolds\Migrations\Tests\Fixtures\TestMigrationsManager;
@@ -22,15 +22,15 @@ class MigrationsManagerTest extends MigrationsTestCase
 
         $this->manager->setMigrationScriptsClasses([
             TestMigrationScript::class,
-            get_class($this->createMock(MigrationScript::class)),
-            get_class($this->createMock(MigrationScript::class)),
-            get_class($this->createMock(MigrationScript::class)),
-            get_class($this->createMock(MigrationScript::class)),
+            get_class($this->createMock(MigrationScriptInterface::class)),
+            get_class($this->createMock(MigrationScriptInterface::class)),
+            get_class($this->createMock(MigrationScriptInterface::class)),
+            get_class($this->createMock(MigrationScriptInterface::class)),
         ]);
         verify(count($scripts = $this->manager->getMigrationScripts()))->equals(5);
 
         foreach ($scripts as $script) {
-            verify($script)->isInstanceOf(MigrationScript::class);
+            verify($script)->isInstanceOf(MigrationScriptInterface::class);
         }
 
         $this->manager->setMigrationScriptsClasses(['LOLOLOLOL']);

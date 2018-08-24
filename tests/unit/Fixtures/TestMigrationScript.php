@@ -4,9 +4,9 @@
 namespace Rhubarb\Scaffolds\Migrations\Tests\Fixtures;
 
 
-use Rhubarb\Scaffolds\Migrations\Scripts\MigrationScript;
+use Rhubarb\Scaffolds\Migrations\Scripts\MigrationScriptInterface;
 
-class TestMigrationScript implements MigrationScript
+class TestMigrationScript implements MigrationScriptInterface
 {
     public $execute = null;
 

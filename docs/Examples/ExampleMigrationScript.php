@@ -1,9 +1,9 @@
 <?php /** @noinspection PhpUndefinedMethodInspection */
 /** @noinspection PhpUndefinedClassInspection */
 
-use Rhubarb\Scaffolds\Migrations\Scripts\MigrationScript;
+use Rhubarb\Scaffolds\Migrations\Scripts\MigrationScriptInterface;
 
-class ExampleMigrationScript implements MigrationScript
+class ExampleMigrationScript implements MigrationScriptInterface
 {
 
     /**
