@@ -7,7 +7,7 @@ use Error;
 use Exception;
 use Rhubarb\Crown\Logging\Log;
 use Rhubarb\Modules\Migrations\MigrationsManager;
-use Rhubarb\Modules\Migrations\MigrationsSettings;
+use Rhubarb\Modules\Migrations\MigrationsStateProvider;
 use Rhubarb\Modules\Migrations\Scripts\MigrationScriptInterface;
 
 class MigrateToVersionUseCase
@@ -18,17 +18,17 @@ class MigrateToVersionUseCase
      */
     public static function execute(MigrationEntity $entity)
     {
-        Log::info("Beginning migration from $$entity->localVersion to $entity->targetVersion");
+        Log::info("Beginning migration from $$entity->startVersion to $entity->targetVersion");
         Log::indent();
         try {
             self::executeMigrationScripts(self::getMigrationScripts($entity));
             self::updateLocalVersion($entity->targetVersion);
         } catch (Error $error) {
             Log::outdent();
-            Log::error("Failed migration from $entity->localVersion  to $entity->targetVersion");
+            Log::error("Failed migration from $entity->startVersion  to $entity->targetVersion");
         }
         Log::outdent();
-        Log::info("Finished migration from $entity->localVersion  to $entity->targetVersion");
+        Log::info("Finished migration from $entity->startVersion  to $entity->targetVersion");
     }
 
     /**
@@ -37,14 +37,9 @@ class MigrateToVersionUseCase
     private static function executeMigrationScripts($migrationScripts)
     {
         foreach ($migrationScripts as $migrationScript) {
-            try {
-                $scriptClass = get_class($migrationScript);
-                Log::info("Executing Script $scriptClass for version {$migrationScript->version()} with priority {$migrationScript->priority()}");
-                $migrationScript->execute();
-            } catch (Error $error) {
-                MigrationsSettings::singleton()->setResumeScript(get_class($migrationScript));
-                throw $error;
-            }
+            $scriptClass = get_class($migrationScript);
+            Log::info("Executing Script $scriptClass for version {$migrationScript->version()} with priority {$migrationScript->priority()}");
+            $migrationScript->execute();
         }
     }
 
@@ -53,7 +48,7 @@ class MigrateToVersionUseCase
      */
     private static function updateLocalVersion(int $updatedVersion)
     {
-        MigrationsSettings::singleton()->setLocalVersion($updatedVersion);
+        MigrationsStateProvider::getProvider()->setLocalVersion($updatedVersion);
     }
 
     /**
@@ -64,24 +59,23 @@ class MigrateToVersionUseCase
      */
     private static function getMigrationScripts(MigrationEntity $entity): array
     {
-        $scripts = MigrationsManager::getMigrationsManager()->getMigrationScripts();
+        $migrationsManager = MigrationsManager::getMigrationsManager();
+        $migrationsStateProvider = MigrationsStateProvider::getProvider();
+
+        $scripts = $migrationsManager->getMigrationScripts($entity->startVersion, $entity->targetVersion);
 
         foreach ($scripts as $script) {
             if (
                 in_array(get_class($script), $entity->skipScripts)
-                || (isset($migrationScripts) && in_array($script, $migrationScripts))
+                ||
+                (isset($migrationScripts) && in_array($script, $migrationScripts))
             ) {
                 continue;
             }
-            if (
-                $script->version() >= $entity->localVersion
-                && $script->version() <= $entity->targetVersion
-            ) {
-                $migrationScripts[] = $script;
-            }
+            $migrationScripts[] = $script;
         }
 
-        if (!isset($migrationScripts)) {
+        if (empty($migrationScripts)) {
             return [];
         }
 
@@ -94,7 +88,7 @@ class MigrateToVersionUseCase
         });
 
         /** @var MigrationScriptInterface $resume */
-        if ($entity->resumeScript && is_a($resume = new $entity->resumeScript(), MigrationScriptInterface::class)) {
+        if ($entity->attemptResume && is_a($resume = $migrationsStateProvider->getResumeScript(), MigrationScriptInterface::class)) {
             $key = array_search($entity->resumeScript, array_map('get_class', $migrationScripts));
             array_splice($migrationScripts, 0, $key);
         }

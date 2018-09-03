@@ -16,50 +16,37 @@ class MigrationsManager
     /** @var string[] $migrationScriptClasses */
     protected $migrationScriptClasses = [];
 
-    /** @var MigrationScriptInterface[] $migrationScripts */
-    protected $migrationScripts = [];
-
-    /** @var boolean $scriptsInstantiated */
-    protected $scriptsInstantiated = false;
-
     /**
+     *
+     * @param int|null $minVersion
+     * @param int|null $maxVersion
      * @return MigrationScriptInterface[]
      * @throws ImplementationException
      */
-    public function getMigrationScripts(): array
+    public function getMigrationScripts(int $minVersion = null, int $maxVersion = null): array
     {
-        if (!$this->scriptsInstantiated) {
-            $this->instantiateMigrationScripts();
-        }
-
-        foreach ($this->migrationScripts as $migrationScript) {
-            if (is_a($migrationScript, MigrationScriptInterface::class)) {
-                $migrationScripts[] = $migrationScript;
-            } else {
-                throw new ImplementationException('Non-MigrationScript Class provided to MigrationManager');
-            }
-        }
-
-        return $migrationScripts ?? [];
-    }
-
-    /**
-     * Instantiates the register migration script classes.
-     *
-     * @throws ImplementationException
-     */
-    private function instantiateMigrationScripts()
-    {
+        /** @var MigrationScriptInterface $migrationScriptClass */
         foreach ($this->getMigrationScriptClasses() as $migrationScriptClass) {
             if (class_exists($migrationScriptClass)) {
-                $migrationScripts[] = new $migrationScriptClass();
+                if (
+                    (isset($minVersion) && $migrationScriptClass::version() < $minVersion)
+                    ||
+                    (isset($maxVersion) && $migrationScriptClass::version() > $maxVersion)
+                ) {
+                    continue;
+                }
+                $migrationScript = new $migrationScriptClass();
+                if (is_a($migrationScript, MigrationScriptInterface::class)) {
+                    $migrationScripts[] = $migrationScript;
+                } else {
+                    throw new ImplementationException('Non-MigrationScript Class provided to MigrationManager');
+                }
             } else {
                 throw new ImplementationException('Non-Existent MigrationScript provided to MigrationManager.');
             }
         }
 
-        $this->migrationScripts = $migrationScripts ?? [];
-        $this->scriptsInstantiated = true;
+        return $migrationScripts ?? [];
     }
 
     /**
@@ -79,7 +66,6 @@ class MigrationsManager
     public function registerMigrationScripts(array $migrationScriptClasses)
     {
         $this->migrationScriptClasses = $migrationScriptClasses;
-        $this->scriptsInstantiated = false;
     }
 
     /**

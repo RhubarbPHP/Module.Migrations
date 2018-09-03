@@ -16,7 +16,7 @@ interface MigrationScriptInterface
      *
      * @return int
      */
-    public function version(): int;
+    public static function version(): int;
 
     /**
      * Implement this method to set the priority of a script.
@@ -24,5 +24,5 @@ interface MigrationScriptInterface
      *
      * @return int
      */
-    public function priority(): int;
+    public static function priority(): int;
 }

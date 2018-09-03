@@ -12,8 +12,10 @@ class MigrationEntity
 {
     /** @var int $targetVersion */
     public $targetVersion;
-    /** @var int $localVersion */
-    public $localVersion;
+    /** @var int $startVersion */
+    public $startVersion;
+    /** @var bool $attemptResume */
+    public $attemptResume = false;
     /** @var string $resumeScript */
     public $resumeScript;
     /** @var string[] $skipScripts */
@@ -21,6 +23,6 @@ class MigrationEntity
 
     public function __construct()
     {
-        $this->localVersion = MigrationsStateProvider::getProvider()->getLocalVersion();
+        $this->startVersion = MigrationsStateProvider::getProvider()->getLocalVersion();
     }
 }

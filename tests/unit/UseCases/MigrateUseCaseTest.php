@@ -32,7 +32,7 @@ class MigrateUseCaseTest extends MigrationsTestCase
         MigrationsSettings::singleton()->setLocalVersion(77);
 
         $entity = new MigrationEntity();
-        $entity->localVersion = 1;
+        $entity->startVersion = 1;
         $entity->targetVersion = 1000;
 
         /** @var MigrationScriptInterface[] $migrationScripts */
@@ -43,7 +43,7 @@ class MigrateUseCaseTest extends MigrationsTestCase
             $migrationScripts[] = $this->newScript($version);
         }
         $this->manager->setMigrationScripts($migrationScripts);
-        $entity->localVersion = 79;
+        $entity->startVersion = 79;
         $entity->targetVersion = 80;
         $migrationScripts = self::runMethodAsPublic('getMigrationScripts', $entity);
         verify(count($migrationScripts))->equals(2);
@@ -262,7 +262,7 @@ class MigrateUseCaseTest extends MigrationsTestCase
     {
         $entity = new MigrationEntity();
         if (isset($localVersion)) {
-            $entity->localVersion = $localVersion;
+            $entity->startVersion = $localVersion;
         }
         $entity->targetVersion = $targetVersion;
         $entity->resumeScript = $resumeScript;

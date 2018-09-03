@@ -9,6 +9,7 @@ use Rhubarb\Crown\Application;
 use Rhubarb\Crown\Exceptions\ImplementationException;
 use Rhubarb\Custard\Command\CustardCommand;
 use Rhubarb\Modules\Migrations\MigrationsSettings;
+use Rhubarb\Modules\Migrations\MigrationsStateProvider;
 use Rhubarb\Modules\Migrations\UseCases\MigrateToVersionUseCase;
 use Rhubarb\Modules\Migrations\UseCases\MigrationEntity;
 use Symfony\Component\Console\Input\InputArgument;
@@ -39,7 +40,7 @@ class MigrateCommand extends CustardCommand
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $migrationSettings = MigrationsSettings::singleton();
+        $migrationStateProvider = MigrationsStateProvider::getProvider();
 
         $targetVersion =
             $input->getArgument(self::ARG_TARGET_VERSION)
@@ -47,27 +48,22 @@ class MigrateCommand extends CustardCommand
 
         $startVersion =
             $input->getArgument(self::ARG_START_VERSION)
-                ?: $migrationSettings->getLocalVersion();
+                ?: $migrationStateProvider->getLocalVersion();
 
         $skipScripts = $input->getOption(self::OPT_SKIP_SCRIPTS);
 
-        if ($input->getOption(self::OPT_RESUME) && is_null($resumeScript = $migrationSettings->getResumeScript())) {
-            $output->writeln("<error>No resume point could be retrieved.</error>", 1);
-            return;
-        }
-
         $entity = new MigrationEntity();
-        $entity->localVersion = $startVersion;
+        $entity->startVersion = $startVersion;
         $entity->targetVersion = $targetVersion;
-        $entity->skipScripts = $skipScripts;
-        $entity->resumeScript = $resumeScript ?? null;
+        $entity->skipScripts = $skipScripts ?? [];
+        $entity->attemptResume = $input->getOption(self::OPT_RESUME) ?? false;
 
         try {
             MigrateToVersionUseCase::execute($entity);
         } catch (ImplementationException $implementationException) {
-            echo 'ERROR: ' . $implementationException->getMessage();
+            echo 'EXCEPTION: ' . $implementationException->getMessage();
         } catch (Exception $exception) {
-            echo 'ERROR: ' . $exception->getMessage();
+            echo 'EXCEPTION: ' . $exception->getMessage();
         }
     }
 }

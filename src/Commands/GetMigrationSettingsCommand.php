@@ -7,6 +7,7 @@ namespace Rhubarb\Modules\Migrations\Commands;
 use Rhubarb\Crown\Application;
 use Rhubarb\Custard\Command\CustardCommand;
 use Rhubarb\Modules\Migrations\MigrationsSettings;
+use Rhubarb\Modules\Migrations\MigrationsStateProvider;
 use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -24,7 +25,7 @@ class GetMigrationSettingsCommand extends CustardCommand
         $padr = function ($str, $padlen = 25) {
             return str_pad($str, $padlen, ' ', STR_PAD_RIGHT);
         };
-        $migrationSettings = MigrationsSettings::singleton();
+        $migrationStateProvider = MigrationsStateProvider::getProvider();
 
         $tag = function ($string, $tag) {
             return "<$tag>$string</$tag>";
@@ -39,16 +40,10 @@ class GetMigrationSettingsCommand extends CustardCommand
             $tag($padr("Application Version:") . Application::current()->getVersion(), "i")
         );
         $output->writeln(
-            $tag($padr("Local Version:") . $migrationSettings->getLocalVersion(), 'i')
+            $tag($padr("Local Version:") . $migrationStateProvider->getLocalVersion(), 'i')
         );
         $output->writeln(
-            $tag($padr("Resume Script:") . ($migrationSettings->getResumeScript() ?? 'none'), 'i')
-        );
-        $output->writeln(
-            $tag($padr("Page Size:") . $migrationSettings->pageSize, 'i')
-        );
-        $output->writeln(
-            $tag($padr("Repository Type:") . $migrationSettings->repositoryType, 'i')
+            $tag($padr("Resume Script:") . ($migrationStateProvider->getResumeScript() ?? 'none'), 'i')
         );
     }
 }

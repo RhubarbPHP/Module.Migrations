@@ -37,5 +37,4 @@ class MigrationsModule extends Module
                 ]
             );
     }
-
 }
