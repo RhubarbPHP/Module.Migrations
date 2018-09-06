@@ -1,11 +1,11 @@
 <?php
 
-
 namespace Rhubarb\Modules\Migrations\Providers;
 
-
 use Rhubarb\Crown\Exceptions\ImplementationException;
+use Rhubarb\Modules\Migrations\Interfaces\MigrationScriptInterface;
 use Rhubarb\Modules\Migrations\MigrationsStateProvider;
+use Rhubarb\Modules\Migrations\UseCases\MigrationEntity;
 
 class LocalStorageStateProvider extends MigrationsStateProvider
 {
@@ -20,8 +20,21 @@ class LocalStorageStateProvider extends MigrationsStateProvider
 
     protected function initialiseDefaultValues()
     {
-        $this->localVersionPath = sys_get_temp_dir() . '/' . self::DEFAULT_LOCAL_VERSION_FILE;
-        $this->resumeScriptPath = sys_get_temp_dir() . '/' . self::DEFAULT_RESUME_SCRIPT_FILE;
+        $this->setLocalVersionPath(sys_get_temp_dir() . '/' . self::DEFAULT_LOCAL_VERSION_FILE);
+        $this->setResumeScriptPath(sys_get_temp_dir() . '/' . self::DEFAULT_RESUME_SCRIPT_FILE);
+    }
+
+    /**
+     * @param MigrationEntity $entity
+     */
+    public function applyResumePoint(MigrationEntity $entity): void
+    {
+        $resumeScript = $this->getResumeScript();
+        if ($resumeScript) {
+            /** @var MigrationScriptInterface $resumeScript */
+            $entity->startVersion = $resumeScript->version();
+            $entity->startPriority = $resumeScript->priority();
+        }
     }
 
     /**
@@ -29,18 +42,7 @@ class LocalStorageStateProvider extends MigrationsStateProvider
      */
     public function getLocalVersion(): int
     {
-        if ($this->localVersion) {
-            return $this->localVersion;
-        } else {
-            if (file_exists($this->getLocalVersionFilePath())) {
-                $this->localVersion = (int)file_get_contents($this->getLocalVersionFilePath());
-                return $this->localVersion;
-            } else {
-                $this->localVersion = 0; // ASSUME NOTHING
-                file_put_contents($this->getLocalVersionFilePath(), $this->localVersion);
-                return $this->localVersion;
-            }
-        }
+        return (int)file_get_contents($this->getLocalVersionFilePath());
     }
 
     /**
@@ -49,12 +51,7 @@ class LocalStorageStateProvider extends MigrationsStateProvider
      */
     public function setLocalVersion(int $newLocalVersion): void
     {
-        if ($this->getLocalVersionFilePath()) {
-            file_put_contents($this->getLocalVersionFilePath(), $newLocalVersion);
-            $this->localVersion = $newLocalVersion;
-        } else {
-            throw new ImplementationException('No path provided for Local Version in Migration Settings!');
-        }
+        file_put_contents($this->getLocalVersionFilePath(), $newLocalVersion);
     }
 
     /**
@@ -62,7 +59,7 @@ class LocalStorageStateProvider extends MigrationsStateProvider
      */
     public function getLocalVersionFilePath(): string
     {
-        return $this->localVersionPath;
+        return $this->localVersionPath ?? sys_get_temp_dir() . '/localversion.txt';
     }
 
     /**
@@ -70,15 +67,7 @@ class LocalStorageStateProvider extends MigrationsStateProvider
      */
     public function getResumeScript(): string
     {
-        if ($this->resumeScript) {
-            return $this->resumeScript;
-        } else {
-            if (file_exists($this->getResumeScriptFilePath())) {
-                $this->resumeScript = file_get_contents($this->getResumeScriptFilePath());
-                return $this->resumeScript;
-            }
-        }
-        return null;
+        return file_get_contents($this->getResumeScriptFilePath());
     }
 
     /**
@@ -87,11 +76,9 @@ class LocalStorageStateProvider extends MigrationsStateProvider
     public function setResumeScript(string $resumeScript = null): void
     {
         if (is_null($resumeScript)) {
-            $this->resumeScript = null;
-            unlink($this->resumeScriptPath);
+            unlink($this->getResumeScriptFilePath());
         } else {
             file_put_contents($this->getResumeScriptFilePath(), $resumeScript);
-            $this->resumeScript = $resumeScript;
         }
     }
 
@@ -100,7 +87,7 @@ class LocalStorageStateProvider extends MigrationsStateProvider
      */
     public function getResumeScriptFilePath(): string
     {
-        return $this->resumeScriptPath;
+        return $this->resumeScriptPath ?? sys_get_temp_dir() . '/resumescript.txt';
     }
 
     /**
@@ -109,7 +96,6 @@ class LocalStorageStateProvider extends MigrationsStateProvider
     public function setLocalVersionPath(string $localVersionPath): void
     {
         $this->moveLocalFile($this->getLocalVersionFilePath(), $localVersionPath);
-        $this->localVersionPath = $localVersionPath;
     }
 
     /**
@@ -118,7 +104,6 @@ class LocalStorageStateProvider extends MigrationsStateProvider
     public function setResumeScriptPath(string $resumeScriptPath): void
     {
         $this->moveLocalFile($this->getResumeScriptFilePath(), $resumeScriptPath);
-        $this->resumeScriptPath = $resumeScriptPath;
     }
 
     /**
@@ -127,12 +112,7 @@ class LocalStorageStateProvider extends MigrationsStateProvider
      */
     private function moveLocalFile($oldPath, $newPath)
     {
-        if (file_get_contents($this->localVersionPath) !== false) {
-            $localValue = file_get_contents($oldPath);
-            unlink($oldPath);
-            file_put_contents($newPath, $localValue);
-        }
-
-
+        file_put_contents($newPath, file_get_contents($oldPath) ?: '');
+        unlink($oldPath);
     }
 }

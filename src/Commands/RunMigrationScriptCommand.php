@@ -7,7 +7,7 @@ namespace Rhubarb\Modules\Migrations\Commands;
 use Rhubarb\Custard\Command\CustardCommand;
 use Rhubarb\Modules\Migrations\MigrationsManager;
 use Rhubarb\Modules\Migrations\MigrationsSettings;
-use Rhubarb\Modules\Migrations\Scripts\MigrationScriptInterface;
+use Rhubarb\Modules\Migrations\Interfaces\MigrationScriptInterface;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;

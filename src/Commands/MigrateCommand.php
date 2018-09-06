@@ -10,7 +10,7 @@ use Rhubarb\Crown\Exceptions\ImplementationException;
 use Rhubarb\Custard\Command\CustardCommand;
 use Rhubarb\Modules\Migrations\MigrationsSettings;
 use Rhubarb\Modules\Migrations\MigrationsStateProvider;
-use Rhubarb\Modules\Migrations\UseCases\MigrateToVersionUseCase;
+use Rhubarb\Modules\Migrations\UseCases\RunMigrationsUseCase;
 use Rhubarb\Modules\Migrations\UseCases\MigrationEntity;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -54,14 +54,14 @@ class MigrateCommand extends CustardCommand
 
         $entity = new MigrationEntity();
         $entity->startVersion = $startVersion;
-        $entity->targetVersion = $targetVersion;
+        $entity->endVersion = $targetVersion;
         $entity->skipScripts = $skipScripts ?? [];
-        $entity->attemptResume = $input->getOption(self::OPT_RESUME) ?? false;
+        $entity->resume = $input->getOption(self::OPT_RESUME) ?? false;
 
         try {
-            MigrateToVersionUseCase::execute($entity);
-        } catch (ImplementationException $implementationException) {
-            echo 'EXCEPTION: ' . $implementationException->getMessage();
+            RunMigrationsUseCase::execute($entity);
+        } catch (\Error $error) {
+            echo 'ERROR: ' . $error->getMessage();
         } catch (Exception $exception) {
             echo 'EXCEPTION: ' . $exception->getMessage();
         }

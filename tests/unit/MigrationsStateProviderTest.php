@@ -11,76 +11,76 @@ class MigrationsStateProviderTest extends MigrationsTestCase
 {
     /** @var TestMigrationsManager $manger */
     protected $manager;
-    /** @var MigrationsStateProvider $settings */
-    protected $settings;
+    /** @var MigrationsStateProvider $stateProvider */
+    protected $stateProvider;
 
     public function testLocalVersion()
     {
-        $this->settings->setLocalVersion(1);
-        verify(file_exists($this->settings->getLocalVersionFilePath()))->true();
-        verify(file_get_contents($this->settings->getLocalVersionFilePath()))->equals(1);
+        $this->stateProvider->setLocalVersion(1);
+        verify(file_exists($this->stateProvider->getLocalVersionFilePath()))->true();
+        verify(file_get_contents($this->stateProvider->getLocalVersionFilePath()))->equals(1);
 
         $this->clearLocalVersion();
-        verify(file_exists($this->settings->getLocalVersionFilePath()))->false();
-        verify($this->settings->getLocalVersion())->equals(0);
-        verify(file_exists($this->settings->getLocalVersionFilePath()))->true();
-        verify(file_get_contents($this->settings->getLocalVersionFilePath()))->equals(0);
+        verify(file_exists($this->stateProvider->getLocalVersionFilePath()))->false();
+        verify($this->stateProvider->getLocalVersion())->equals(0);
+        verify(file_exists($this->stateProvider->getLocalVersionFilePath()))->true();
+        verify(file_get_contents($this->stateProvider->getLocalVersionFilePath()))->equals(0);
     }
 
     public function testResumeScript()
     {
         $this->clearResumeScript();
         $getResumeScriptFileContents = function () {
-            if (file_exists($this->settings->getResumeScriptFilePath())) {
-                return file_get_contents($this->settings->getResumeScriptFilePath());
+            if (file_exists($this->stateProvider->getResumeScriptFilePath())) {
+                return file_get_contents($this->stateProvider->getResumeScriptFilePath());
             }
             return null;
         };
-        verify($this->settings->getResumeScript())->isEmpty();
+        verify($this->stateProvider->getResumeScript())->isEmpty();
 
-        $this->settings->setResumeScript('BLAAAAAH');
+        $this->stateProvider->setResumeScript('BLAAAAAH');
         verify($getResumeScriptFileContents())->equals('BLAAAAAH');
 
-        $this->settings->setResumeScript('NOM');
+        $this->stateProvider->setResumeScript('NOM');
         verify($getResumeScriptFileContents())->equals('NOM');
 
 
-        $this->settings->setResumeScript('');
+        $this->stateProvider->setResumeScript('');
         verify($getResumeScriptFileContents())->isEmpty();
 
         $this->clearResumeScript();
         verify($getResumeScriptFileContents())->null();
-        verify($this->settings->getResumeScript())->null();
+        verify($this->stateProvider->getResumeScript())->null();
     }
 
     public function testChangingFileLocation()
     {
-        $this->settings->setLocalVersion(1);
-        verify(file_get_contents($this->settings->getLocalVersionFilePath()))->equals(1);
-        $oldLocPath = $this->settings->getLocalVersionFilePath();
-        $this->settings->setLocalVersionPath(__DIR__ . '/../_data/locver.lock');
-        verify(file_get_contents($this->settings->getLocalVersionFilePath()))->equals(1);
+        $this->stateProvider->setLocalVersion(1);
+        verify(file_get_contents($this->stateProvider->getLocalVersionFilePath()))->equals(1);
+        $oldLocPath = $this->stateProvider->getLocalVersionFilePath();
+        $this->stateProvider->setLocalVersionPath(__DIR__ . '/../_data/locver.lock');
+        verify(file_get_contents($this->stateProvider->getLocalVersionFilePath()))->equals(1);
 
-        $this->settings->setResumeScript('lads');
-        verify(file_get_contents($this->settings->getResumeScriptFilePath()))->equals('lads');
-        $this->settings->setResumeScriptPath(__DIR__ . '/../_data/resscr.lock');
-        verify($this->settings->getResumeScriptFilePath())->notEquals($oldLocPath);
-        verify(file_get_contents($this->settings->getResumeScriptFilePath()))->equals('lads');
+        $this->stateProvider->setResumeScript('lads');
+        verify(file_get_contents($this->stateProvider->getResumeScriptFilePath()))->equals('lads');
+        $this->stateProvider->setResumeScriptPath(__DIR__ . '/../_data/resscr.lock');
+        verify($this->stateProvider->getResumeScriptFilePath())->notEquals($oldLocPath);
+        verify(file_get_contents($this->stateProvider->getResumeScriptFilePath()))->equals('lads');
     }
 
     private function clearLocalVersion()
     {
-        $this->settings->localVersion = null;
-        if (file_exists($this->settings->getLocalVersionFilePath())) {
-            unlink($this->settings->getLocalVersionFilePath());
+        $this->stateProvider->localVersion = null;
+        if (file_exists($this->stateProvider->getLocalVersionFilePath())) {
+            unlink($this->stateProvider->getLocalVersionFilePath());
         }
     }
 
     private function clearResumeScript()
     {
-        $this->settings->resumeScript = null;
-        if (file_exists($this->settings->getResumeScriptFilePath())) {
-            unlink($this->settings->getResumeScriptFilePath());
+        $this->stateProvider->resumeScript = null;
+        if (file_exists($this->stateProvider->getResumeScriptFilePath())) {
+            unlink($this->stateProvider->getResumeScriptFilePath());
         }
     }
 }

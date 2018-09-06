@@ -1,6 +1,6 @@
 <?php /** @noinspection PhpUndefinedClassInspection */
 
-use Rhubarb\Modules\Migrations\Scripts\DataMigrationScript;
+use Rhubarb\Modules\Migrations\Interfaces\DataMigrationScript;
 
 class ExampleDataMigrationScript extends DataMigrationScript
 {

@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Rhubarb\Modules\Migrations\Scripts;
+namespace Rhubarb\Modules\Migrations\Interfaces;
 
 
 interface MigrationScriptInterface
@@ -16,7 +16,7 @@ interface MigrationScriptInterface
      *
      * @return int
      */
-    public static function version(): int;
+    public function version(): int;
 
     /**
      * Implement this method to set the priority of a script.
@@ -24,5 +24,5 @@ interface MigrationScriptInterface
      *
      * @return int
      */
-    public static function priority(): int;
+    public function priority(): int;
 }

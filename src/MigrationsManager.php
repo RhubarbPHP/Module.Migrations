@@ -6,66 +6,79 @@ namespace Rhubarb\Modules\Migrations;
 
 use Rhubarb\Crown\Application;
 use Rhubarb\Crown\DependencyInjection\SingletonTrait;
-use Rhubarb\Crown\Exceptions\ImplementationException;
-use Rhubarb\Modules\Migrations\Scripts\MigrationScriptInterface;
+use Rhubarb\Modules\Migrations\Interfaces\MigrationScriptInterface;
+use Rhubarb\Modules\Migrations\UseCases\MigrationEntity;
 
 class MigrationsManager
 {
     use SingletonTrait;
 
-    /** @var string[] $migrationScriptClasses */
-    protected $migrationScriptClasses = [];
+    private $migrationScripts = [];
 
     /**
-     *
      * @param int|null $minVersion
      * @param int|null $maxVersion
      * @return MigrationScriptInterface[]
-     * @throws ImplementationException
      */
-    public function getMigrationScripts(int $minVersion = null, int $maxVersion = null): array
+    public function getMigrationScripts(MigrationEntity $entity): array
     {
-        /** @var MigrationScriptInterface $migrationScriptClass */
-        foreach ($this->getMigrationScriptClasses() as $migrationScriptClass) {
-            if (class_exists($migrationScriptClass)) {
-                if (
-                    (isset($minVersion) && $migrationScriptClass::version() < $minVersion)
-                    ||
-                    (isset($maxVersion) && $migrationScriptClass::version() > $maxVersion)
-                ) {
-                    continue;
-                }
-                $migrationScript = new $migrationScriptClass();
-                if (is_a($migrationScript, MigrationScriptInterface::class)) {
-                    $migrationScripts[] = $migrationScript;
-                } else {
-                    throw new ImplementationException('Non-MigrationScript Class provided to MigrationManager');
-                }
-            } else {
-                throw new ImplementationException('Non-Existent MigrationScript provided to MigrationManager.');
+        foreach ($this->migrationScripts as $migrationScript) {
+            if (!is_a($migrationScript, MigrationScriptInterface::class)) {
+                throw new \Error('Non-MigrationScriptInterface object provided to MigrationManager:' . get_class($migrationScript));
             }
-        }
+            if (!$this->isScriptInRange($migrationScript, $entity)) {
+                continue;
+            }
 
-        return $migrationScripts ?? [];
+            $entity->migrationScripts[] = $migrationScript;
+        }
+        return $this->sortMigrationScripts($entity->migrationScripts);
     }
 
     /**
-     * @return string[]
+     * @param MigrationScriptInterface $migrationScript
+     * @param MigrationEntity          $entity
+     * @return bool
      */
-    protected function getMigrationScriptClasses()
+    protected function isScriptInRange(MigrationScriptInterface $migrationScript, MigrationEntity $entity)
     {
-        return $this->migrationScriptClasses;
+        if (
+            (isset($entity->startVersion) && $migrationScript->version() < $entity->startVersion)
+            || (isset($entity->startPriority) && $migrationScript->priority() < $entity->startPriority)
+            || (isset($entity->endVersion) && $migrationScript->version() > $entity->endVersion)
+            || (isset($entity->endPriority) && $migrationScript->priority() > $entity->endPriority)
+            || (array_search(get_class($migrationScript), $entity->skipScripts))
+        ) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * @param MigrationScriptInterface[] $migrationScripts
+     * @return MigrationScriptInterface[]
+     */
+    protected function sortMigrationScripts(&$migrationScripts): array
+    {
+        usort($migrationScripts, function (MigrationScriptInterface $a, MigrationScriptInterface $b) {
+            if ($a->version() != $b->version()) {
+                return $a->version() <=> $b->version();
+            } else {
+                return $b->priority() <=> $a->priority();
+            }
+        });
+        return $migrationScripts;
     }
 
     /**
      * Call this method in the application to define which MigrationScripts should be loaded/processed.
      * Alternatively, extend this method to avoid cluttering the Application class.
      *
-     * @param array $migrationScriptClasses
+     * @param MigrationScriptInterface[] $migrationScripts
      */
-    public function registerMigrationScripts(array $migrationScriptClasses)
+    public function registerMigrationScripts(array $migrationScripts)
     {
-        $this->migrationScriptClasses = $migrationScriptClasses;
+        $this->migrationScripts = $migrationScripts;
     }
 
     /**

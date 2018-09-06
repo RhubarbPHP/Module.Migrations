@@ -4,36 +4,38 @@ namespace Rhubarb\Modules\Migrations\Tests\UseCases;
 
 use Rhubarb\Crown\Exceptions\ImplementationException;
 use Rhubarb\Crown\LoginProviders\Exceptions\LoginFailedException;
+use Rhubarb\Modules\Migrations\Interfaces\MigrationScriptInterface;
+use Rhubarb\Modules\Migrations\MigrationsManager;
 use Rhubarb\Modules\Migrations\MigrationsSettings;
-use Rhubarb\Modules\Migrations\Scripts\MigrationScriptInterface;
+use Rhubarb\Modules\Migrations\MigrationsStateProvider;
 use Rhubarb\Modules\Migrations\Tests\Fixtures\MigrationsTestCase;
 use Rhubarb\Modules\Migrations\Tests\Fixtures\TestMigrationScript;
 use Rhubarb\Modules\Migrations\Tests\Fixtures\TestMigrationsManager;
-use Rhubarb\Modules\Migrations\UseCases\MigrateToVersionUseCase;
 use Rhubarb\Modules\Migrations\UseCases\MigrationEntity;
+use Rhubarb\Modules\Migrations\UseCases\RunMigrationsUseCase;
 
 class MigrateUseCaseTest extends MigrationsTestCase
 {
-    /** @var TestMigrationsManager $manager */
+    /** @var MigrationsManager $manager */
     protected $manager;
-    /** @var MigrationsSettings $settings */
-    protected $settings;
+    /** @var MigrationsStateProvider $stateProvider */
+    protected $stateProvider;
 
     public function testLocalVersionIncreases()
     {
-        $this->settings->setLocalVersion(1);
+        $this->stateProvider->setLocalVersion(1);
         $this->manager->setMigrationScripts([$this->newScript(6)]);
-        MigrateToVersionUseCase::execute($this->makeEntity(7));
-        verify($this->settings->getLocalVersion())->equals(7);
+        RunMigrationsUseCase::execute($this->makeEntity(7));
+        verify($this->stateProvider->getLocalVersion())->equals(7);
     }
 
     public function testMigrationScriptsRetrieved()
     {
-        MigrationsSettings::singleton()->setLocalVersion(77);
+        $this->stateProvider->setLocalVersion(77);
 
         $entity = new MigrationEntity();
         $entity->startVersion = 1;
-        $entity->targetVersion = 1000;
+        $entity->endVersion = 1000;
 
         /** @var MigrationScriptInterface[] $migrationScripts */
         $migrationScripts = self::runMethodAsPublic('getMigrationScripts', $entity);
@@ -44,7 +46,7 @@ class MigrateUseCaseTest extends MigrationsTestCase
         }
         $this->manager->setMigrationScripts($migrationScripts);
         $entity->startVersion = 79;
-        $entity->targetVersion = 80;
+        $entity->endVersion = 80;
         $migrationScripts = self::runMethodAsPublic('getMigrationScripts', $entity);
         verify(count($migrationScripts))->equals(2);
 
@@ -56,13 +58,13 @@ class MigrateUseCaseTest extends MigrationsTestCase
         $this->manager->setMigrationScripts($migrationScripts);
         $migrationScripts = self::runMethodAsPublic('getMigrationScripts', $entity);
         verify(count($migrationScripts))->equals(3);
-        verify($migrationScripts[0]->version())->equals(79);
-        verify($migrationScripts[1]->version())->equals(80);
-        verify($migrationScripts[1]->priority())->greaterThan($migrationScripts[2]->priority());
-        verify($migrationScripts[2]->version())->equals(80);
+        verify($migrationScripts[0]::version())->equals(79);
+        verify($migrationScripts[1]::version())->equals(80);
+        verify($migrationScripts[1]::priority())->greaterThan($migrationScripts[2]::priority());
+        verify($migrationScripts[2]::version())->equals(80);
 
         $setUpScripts = function () use (&$loop) {
-            MigrationsSettings::singleton()->setLocalVersion(4);
+            $this->stateProvider->setLocalVersion(4);
             $migrationScripts = [];
             foreach ([5, 5, 6, 7, 7, 7, 8] as $version) {
                 if ($version == 6) {
@@ -76,7 +78,7 @@ class MigrateUseCaseTest extends MigrationsTestCase
 
         $setUpScripts();
         $entity = new MigrationEntity();
-        $entity->targetVersion = 9;
+        $entity->endVersion = 9;
         $entity->resumeScript = TestMigrationScript::class;
         $migrationScripts = self::runMethodAsPublic('getMigrationScripts', $entity);
         verify(get_class($migrationScripts[0]))->equals(TestMigrationScript::class);
@@ -84,7 +86,7 @@ class MigrateUseCaseTest extends MigrationsTestCase
 
         $setUpScripts();
         $entity = new MigrationEntity();
-        $entity->targetVersion = 9;
+        $entity->endVersion = 9;
         $entity->skipScripts = [TestMigrationScript::class];
         $migrationScripts = self::runMethodAsPublic('getMigrationScripts', $entity);
         foreach ($migrationScripts as $migrationScript) {
@@ -92,9 +94,9 @@ class MigrateUseCaseTest extends MigrationsTestCase
         }
     }
 
-    public function testScriptsRunInOrder()
+    public function testScriptsRunInRange()
     {
-        MigrationsSettings::singleton()->setLocalVersion(1);
+        $this->stateProvider->setLocalVersion(1);
         $migrationScripts = [];
         $scriptsRan = $loop = 0;
         foreach ([0, 1, 0, 2, 1, 4] as $version) {
@@ -102,9 +104,8 @@ class MigrateUseCaseTest extends MigrationsTestCase
                 return $scriptsRan++;
             });
         }
-        $this->manager->setMigrationScripts($migrationScripts);
-
-        MigrateToVersionUseCase::execute($this->makeEntity(2));
+        $this->manager->registerMigrationScripts($migrationScripts);
+        RunMigrationsUseCase::execute($this->makeEntity(2));
         verify($scriptsRan)->equals(3);
     }
 
@@ -119,39 +120,27 @@ class MigrateUseCaseTest extends MigrationsTestCase
         $this->manager->setMigrationScripts($migrationScripts);
 
         $this->expectException(ImplementationException::class);
-        MigrateToVersionUseCase::execute($this->makeEntity(2));
+        RunMigrationsUseCase::execute($this->makeEntity(2));
     }
 
     public function testApplicationVersionIncreases()
     {
-        MigrationsSettings::singleton()->setLocalVersion(1);
-        MigrateToVersionUseCase::execute($this->makeEntity(2));
-        verify(MigrationsSettings::singleton()->getLocalVersion())->equals(2);
+        $this->stateProvider->setLocalVersion(1);
+        RunMigrationsUseCase::execute($this->makeEntity(2));
+        verify($this->stateProvider->getLocalVersion())->equals(2);
 
         // Version doesn't increase on errors.
-        $script = $this->newScript(2, 1, function () {
-            throw new ImplementationException('test');
-        });
-        $this->manager->setMigrationScripts([$script]);
-        $this->setExpectedException(ImplementationException::class);
-        MigrateToVersionUseCase::execute($this->makeEntity(3));
-        verify(MigrationsSettings::singleton()->getLocalVersion())->equals(2);
-    }
-
-    public function testResumeScriptSaves()
-    {
-        $failingScript = $this->newScript(
-            4,
-            5,
-            function () {
-                throw new \Error("hi i'm an error");
-            }
-        );
-
-        $this->manager->setMigrationScripts([$failingScript]);
-
-        MigrateToVersionUseCase::execute($this->makeEntity(6, 3));
-        verify($this->settings->getResumeScript())->equals(get_class($failingScript));
+        try {
+            $entity = $this->makeEntity(3);
+            $entity->migrationScripts[] = $this->newScript(2, 1, function () {
+                throw new \Error('test');
+            });
+            RunMigrationsUseCase::execute($entity);
+            $this->fail('Execution should have halted when the error was thrown');
+        } catch (\Error $error) {
+        } finally {
+            verify($this->stateProvider->getLocalVersion())->equals(2);
+        }
     }
 
     public function testResumeOnScript()
@@ -171,12 +160,13 @@ class MigrateUseCaseTest extends MigrationsTestCase
 
         $this->manager->setMigrationScripts($scripts);
         $entity = $this->makeEntity(10, 0, TestMigrationScript::class);
-        MigrateToVersionUseCase::execute($entity);
+        RunMigrationsUseCase::execute($entity);
 
         verify($count)->equals(4);
     }
 
-    public function testSkipScripts() {
+    public function testSkipScripts()
+    {
         foreach (range(1, 6) as $number) {
             $scripts[] = $this->newScript($number);
         }
@@ -185,11 +175,11 @@ class MigrateUseCaseTest extends MigrationsTestCase
             $this->fail('This script should not be run!');
         };
 
-        $this->settings->setLocalVersion(1);
+        $this->stateProvider->setLocalVersion(1);
         $this->manager->setMigrationScripts($scripts);
         $entity = $this->makeEntity(7, 1);
         $entity->skipScripts[] = TestMigrationScript::class;
-        MigrateToVersionUseCase::execute($entity);
+        RunMigrationsUseCase::execute($entity);
     }
 
     public function testExecutionStopsOnError()
@@ -210,19 +200,19 @@ class MigrateUseCaseTest extends MigrationsTestCase
         );
 
         try {
-            MigrateToVersionUseCase::execute($this->makeEntity(6, 1));
+            RunMigrationsUseCase::execute($this->makeEntity(6, 1));
         } catch (LoginFailedException $exception) {
             $this->fail("Failed to stop migration on error");
         }
 
         verify($msg)->equals("Error Thrown");
-        verify($this->settings->getResumeScript())->equals(get_class($script));
+        verify($this->stateProvider->getResumeScript())->equals(get_class($script));
     }
 
     protected static function runMethodAsPublic($method, ...$params)
     {
         try {
-            $class = new \ReflectionClass(MigrateToVersionUseCase::class);
+            $class = new \ReflectionClass(RunMigrationsUseCase::class);
         } catch (\ReflectionException $e) {
             self::fail('Test not set up correctly.');
         }
@@ -242,6 +232,7 @@ class MigrateUseCaseTest extends MigrationsTestCase
         $script = $this->createMock(MigrationScriptInterface::class);
         if (isset($version)) {
             $script->method('version')->willReturn($version);
+
         }
         if (isset($priority)) {
             $script->method('priority')->willReturn($priority);
@@ -264,7 +255,7 @@ class MigrateUseCaseTest extends MigrationsTestCase
         if (isset($localVersion)) {
             $entity->startVersion = $localVersion;
         }
-        $entity->targetVersion = $targetVersion;
+        $entity->endVersion = $targetVersion;
         $entity->resumeScript = $resumeScript;
         return $entity;
     }

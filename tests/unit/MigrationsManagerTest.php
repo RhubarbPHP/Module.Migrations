@@ -3,10 +3,11 @@
 namespace Rhubarb\Modules\Migrations\Tests;
 
 use Rhubarb\Crown\Exceptions\ImplementationException;
-use Rhubarb\Modules\Migrations\Scripts\MigrationScriptInterface;
+use Rhubarb\Modules\Migrations\Interfaces\MigrationScriptInterface;
 use Rhubarb\Modules\Migrations\Tests\Fixtures\MigrationsTestCase;
 use Rhubarb\Modules\Migrations\Tests\Fixtures\TestMigrationScript;
 use Rhubarb\Modules\Migrations\Tests\Fixtures\TestMigrationsManager;
+use Rhubarb\Modules\Migrations\UseCases\MigrationEntity;
 
 class MigrationsManagerTest extends MigrationsTestCase
 {
@@ -15,7 +16,7 @@ class MigrationsManagerTest extends MigrationsTestCase
 
     public function testGetMigrationScripts()
     {
-        verify($this->manager->getMigrationScripts())->isEmpty();
+        verify($this->manager->getMigrationScripts(new MigrationEntity()))->isEmpty();
 
         $this->manager->setMigrationScriptsClasses([TestMigrationScript::class]);
         verify(count($this->manager->getMigrationScripts()))->equals(1);

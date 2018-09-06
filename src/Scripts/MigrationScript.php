@@ -1,26 +1,22 @@
 <?php
 
 
-namespace Rhubarb\Modules\Migrations\Tests\Fixtures;
+namespace Rhubarb\Modules\Migrations\Scripts;
 
 
 use Rhubarb\Modules\Migrations\Interfaces\MigrationScriptInterface;
 
-class TestMigrationScript implements MigrationScriptInterface
+abstract class MigrationScript implements MigrationScriptInterface
 {
-    public $execute = null;
+    /** @var int $version */
+    private $version;
+    /** @var int $priority */
+    private $priority;
 
-    /**
-     * Primary logic of the script should be implemented or called here.
-     *
-     * @return mixed
-     */
-    public function execute()
+    public final function __construct($version, $priority = 0)
     {
-        if (is_callable($this->execute)) {
-            return $this->execute()();
-        }
-        return $this->execute;
+        $this->version = $version;
+        $this->priority = $priority;
     }
 
     /**
@@ -30,7 +26,7 @@ class TestMigrationScript implements MigrationScriptInterface
      */
     public function version(): int
     {
-        return 6;
+        return $this->version;
     }
 
     /**
@@ -41,6 +37,6 @@ class TestMigrationScript implements MigrationScriptInterface
      */
     public function priority(): int
     {
-        return 1;
+        return $this->priority();
     }
 }

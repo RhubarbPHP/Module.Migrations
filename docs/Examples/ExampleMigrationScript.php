@@ -1,7 +1,7 @@
 <?php /** @noinspection PhpUndefinedMethodInspection */
 /** @noinspection PhpUndefinedClassInspection */
 
-use Rhubarb\Modules\Migrations\Scripts\MigrationScriptInterface;
+use Rhubarb\Modules\Migrations\Interfaces\MigrationScriptInterface;
 
 class ExampleMigrationScript implements MigrationScriptInterface
 {
