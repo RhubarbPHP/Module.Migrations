@@ -20,6 +20,7 @@ class RunMigrationsUseCase
         Log::indent();
         self::getMigrationScripts($entity);
         self::executeMigrationScripts($entity);
+        self::updateLocalVersionOnCompletion($entity);
         Log::outdent();
         Log::info("Finished migration from $entity->startVersion  to $entity->endVersion");
     }
@@ -34,7 +35,7 @@ class RunMigrationsUseCase
                 $scriptClass = get_class($migrationScript);
                 Log::info("Executing Script $scriptClass for version {$migrationScript->version()} with priority {$migrationScript->priority()}");
                 $migrationScript->execute();
-                self::updateLocalVersion($migrationScript);
+                self::updateLocalVersionForScript($migrationScript);
             } catch (Error $error) {
                 self::storeResumePoint($migrationScript);
                 Log::outdent();
@@ -44,30 +45,47 @@ class RunMigrationsUseCase
         }
     }
 
+    /**
+     * @param MigrationScriptInterface $failingScript
+     */
     protected static function storeResumePoint(MigrationScriptInterface $failingScript)
     {
         MigrationsStateProvider::getProvider()->storeResumePoint($failingScript);
     }
 
     /**
+     * @param MigrationEntity $entity
+     */
+    protected static function updateLocalVersionOnCompletion(MigrationEntity $entity)
+    {
+        self::updateLocalVersion($entity->endVersion);
+    }
+
+    /**
+     * @param MigrationScriptInterface $migrationScript
+     */
+    protected static function updateLocalVersionForScript(MigrationScriptInterface $migrationScript)
+    {
+        self::updateLocalVersion($migrationScript->version());
+    }
+
+    /**
      * @param int $updatedVersion
      */
-    private static function updateLocalVersion(MigrationScriptInterface $completedScript)
+    private static function updateLocalVersion(int $newLocalVersion)
     {
-        MigrationsStateProvider::getProvider()->setLocalVersion($completedScript->version());
+        MigrationsStateProvider::getProvider()->setLocalVersion($newLocalVersion);
     }
 
     /**
      * @param int $currentVersion
      * @param int $targetVersion
-     * @return MigrationScriptInterface[] array
      */
-    private static function getMigrationScripts(MigrationEntity $entity): array
+    private static function getMigrationScripts(MigrationEntity $entity)
     {
         if ($entity->resume) {
             MigrationsStateProvider::getProvider()->applyResumePoint($entity);
         }
-
-        return MigrationsManager::getMigrationsManager()->getMigrationScripts($entity);
+        MigrationsManager::getMigrationsManager()->getMigrationScripts($entity);
     }
 }

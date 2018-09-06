@@ -18,9 +18,8 @@ class MigrationsManager
     /**
      * @param int|null $minVersion
      * @param int|null $maxVersion
-     * @return MigrationScriptInterface[]
      */
-    public function getMigrationScripts(MigrationEntity $entity): array
+    public function getMigrationScripts(MigrationEntity $entity)
     {
         foreach ($this->migrationScripts as $migrationScript) {
             if (!is_a($migrationScript, MigrationScriptInterface::class)) {
@@ -32,7 +31,7 @@ class MigrationsManager
 
             $entity->migrationScripts[] = $migrationScript;
         }
-        return $this->sortMigrationScripts($entity->migrationScripts);
+        $this->sortMigrationScripts($entity->migrationScripts);
     }
 
     /**

@@ -2,8 +2,9 @@
 
 namespace Rhubarb\Modules\Migrations\Tests;
 
-use Rhubarb\Crown\Exceptions\ImplementationException;
+use PHPUnit\Framework\Error\Error;
 use Rhubarb\Modules\Migrations\Interfaces\MigrationScriptInterface;
+use Rhubarb\Modules\Migrations\MigrationsManager;
 use Rhubarb\Modules\Migrations\Tests\Fixtures\MigrationsTestCase;
 use Rhubarb\Modules\Migrations\Tests\Fixtures\TestMigrationScript;
 use Rhubarb\Modules\Migrations\Tests\Fixtures\TestMigrationsManager;
@@ -11,32 +12,37 @@ use Rhubarb\Modules\Migrations\UseCases\MigrationEntity;
 
 class MigrationsManagerTest extends MigrationsTestCase
 {
-    /** @var TestMigrationsManager $manager */
+    /** @var MigrationsManager $manager */
     protected $manager;
 
     public function testGetMigrationScripts()
     {
-        verify($this->manager->getMigrationScripts(new MigrationEntity()))->isEmpty();
+        $this->manager->getMigrationScripts($entity = new MigrationEntity());
+        verify($entity->migrationScripts)->isEmpty();
 
-        $this->manager->setMigrationScriptsClasses([TestMigrationScript::class]);
-        verify(count($this->manager->getMigrationScripts()))->equals(1);
+        $this->manager->registerMigrationScripts([new TestMigrationScript()]);
+        $this->manager->getMigrationScripts($entity = new MigrationEntity());
+        verify(count($entity->migrationScripts))->equals(1);
 
-        $this->manager->setMigrationScriptsClasses([
-            TestMigrationScript::class,
-            get_class($this->createMock(MigrationScriptInterface::class)),
-            get_class($this->createMock(MigrationScriptInterface::class)),
-            get_class($this->createMock(MigrationScriptInterface::class)),
-            get_class($this->createMock(MigrationScriptInterface::class)),
+        $this->manager->registerMigrationScripts([
+            new TestMigrationScript(),
+            $this->createMock(MigrationScriptInterface::class),
+            $this->createMock(MigrationScriptInterface::class),
+            $this->createMock(MigrationScriptInterface::class),
+            $this->createMock(MigrationScriptInterface::class),
         ]);
-        verify(count($scripts = $this->manager->getMigrationScripts()))->equals(5);
+        $this->manager->getMigrationScripts($entity = new MigrationEntity());
+        verify(count($entity->migrationScripts))->equals(5);
 
-        foreach ($scripts as $script) {
+        foreach ($entity->migrationScripts as $script) {
             verify($script)->isInstanceOf(MigrationScriptInterface::class);
         }
 
-        $this->manager->setMigrationScriptsClasses(['LOLOLOLOL']);
-        $this->expectException(ImplementationException::class);
-        $this->manager->getMigrationScripts();
+        $this->manager->registerMigrationScripts(['LOLOLOLOL']);
+        try {
+            $this->manager->getMigrationScripts($entity = new MigrationEntity());
+        } catch (Error $error) {
+        }
     }
 
     public function testRegisterMigrationScripts()
