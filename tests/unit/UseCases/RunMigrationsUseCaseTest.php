@@ -3,7 +3,6 @@
 namespace Rhubarb\Modules\Migrations\Tests\UseCases;
 
 use Rhubarb\Crown\LoginProviders\Exceptions\LoginFailedException;
-use Rhubarb\Modules\Migrations\Interfaces\MigrationScriptInterface;
 use Rhubarb\Modules\Migrations\MigrationsManager;
 use Rhubarb\Modules\Migrations\MigrationsStateProvider;
 use Rhubarb\Modules\Migrations\Tests\Fixtures\MigrationsTestCase;
@@ -24,6 +23,23 @@ class RunMigrationsUseCaseTest extends MigrationsTestCase
         $this->manager->registerMigrationScripts([$this->newScript(6)]);
         RunMigrationsUseCase::execute($this->makeEntity(7));
         verify($this->stateProvider->getLocalVersion())->equals(7);
+
+        $this->stateProvider->setLocalVersion(1);
+        RunMigrationsUseCase::execute($this->makeEntity(2));
+        verify($this->stateProvider->getLocalVersion())->equals(2);
+
+        // Version doesn't increase on errors.
+        try {
+            $entity = $this->makeEntity(3);
+            $entity->migrationScripts[] = $this->newScript(2, 1, function () {
+                throw new \Error('test');
+            });
+            RunMigrationsUseCase::execute($entity);
+            $this->fail('Execution should have halted when the error was thrown');
+        } catch (\Error $error) {
+        } finally {
+            verify($this->stateProvider->getLocalVersion())->equals(2);
+        }
     }
 
     public function testMigrationScriptsRetrieved()
@@ -73,19 +89,16 @@ class RunMigrationsUseCaseTest extends MigrationsTestCase
         };
 
         $setUpScripts();
-
         $this->stateProvider->storeResumePoint(new TestMigrationScript());
         $entity = $this->makeEntity(9, 1, TestMigrationScript::class);
         $entity->resume = true;
         RunMigrationsUseCase::execute($entity);
-        verify(get_class($entity->migrationScripts[0]))->equals(TestMigrationScript::class);
         verify(count($migrationScripts))->equals(5);
 
         $setUpScripts();
         $entity = new MigrationEntity();
         $entity->endVersion = 9;
         $entity->skipScripts = [TestMigrationScript::class];
-        $migrationScripts = self::runMethodAsPublic('getMigrationScripts', $entity);
         foreach ($migrationScripts as $migrationScript) {
             verify($migrationScript)->isNotInstanceOf(TestMigrationScript::class);
         }
@@ -106,47 +119,6 @@ class RunMigrationsUseCaseTest extends MigrationsTestCase
         verify($scriptsRan)->equals(3);
     }
 
-    public function testApplicationVersionIncreases()
-    {
-        $this->stateProvider->setLocalVersion(1);
-        RunMigrationsUseCase::execute($this->makeEntity(2));
-        verify($this->stateProvider->getLocalVersion())->equals(2);
-
-        // Version doesn't increase on errors.
-        try {
-            $entity = $this->makeEntity(3);
-            $entity->migrationScripts[] = $this->newScript(2, 1, function () {
-                throw new \Error('test');
-            });
-            RunMigrationsUseCase::execute($entity);
-            $this->fail('Execution should have halted when the error was thrown');
-        } catch (\Error $error) {
-        } finally {
-            verify($this->stateProvider->getLocalVersion())->equals(2);
-        }
-    }
-
-    public function testResumeOnScript()
-    {
-        foreach (range(1, 6) as $number) {
-            $scripts[] = $this->newScript($number, 99, function () {
-                $this->fail('Scripts before the resume point should never run');
-            });
-        }
-        $scripts[] = new TestMigrationScript();
-        $count = 0;
-        foreach (range(6, 9) as $number) {
-            $scripts[] = $this->newScript($number, 1, function () use (&$count) {
-                return $count++;
-            });
-        }
-
-        $this->manager->setMigrationScripts($scripts);
-        $entity = $this->makeEntity(10, 0, TestMigrationScript::class);
-        RunMigrationsUseCase::execute($entity);
-
-        verify($count)->equals(4);
-    }
 
     public function testSkipScripts()
     {
@@ -157,12 +129,14 @@ class RunMigrationsUseCaseTest extends MigrationsTestCase
         $failScript->execute = function () {
             $this->fail('This script should not be run!');
         };
+        $scripts[3] = $failScript;
 
         $this->stateProvider->setLocalVersion(1);
-        $this->manager->setMigrationScripts($scripts);
+        $this->manager->registerMigrationScripts($scripts);
         $entity = $this->makeEntity(7, 1);
         $entity->skipScripts[] = TestMigrationScript::class;
         RunMigrationsUseCase::execute($entity);
+        // This script will fail if the failScript runs.
     }
 
     public function testExecutionStopsOnError()
@@ -187,44 +161,5 @@ class RunMigrationsUseCaseTest extends MigrationsTestCase
         } catch (\Error $error) {
             verify($error->getMessage())->equals("Error Thrown");
         }
-    }
-
-    /**
-     * @param int      $version
-     * @param int      $priority
-     * @param callable $execute
-     * @return \PHPUnit\Framework\MockObject\MockObject
-     */
-    protected function newScript($version = null, $priority = null, $execute = null)
-    {
-        $script = $this->createMock(MigrationScriptInterface::class);
-        if (isset($version)) {
-            $script->method('version')->willReturn($version);
-
-        }
-        if (isset($priority)) {
-            $script->method('priority')->willReturn($priority);
-        }
-        if (isset($execute)) {
-            $script->method('execute')->willReturnCallback($execute);
-        }
-        return $script;
-    }
-
-    /**
-     * @param int    $startVersion
-     * @param int    $endVersion
-     * @param string $resumeScript
-     * @return MigrationEntity
-     */
-    protected function makeEntity($endVersion = null, $startVersion = null, $resumeScript = null)
-    {
-        $entity = new MigrationEntity();
-        if (isset($startVersion)) {
-            $entity->startVersion = $startVersion;
-        }
-        $entity->endVersion = $endVersion;
-        $entity->resumeScript = $resumeScript;
-        return $entity;
     }
 }
