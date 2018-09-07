@@ -20,7 +20,9 @@ class RunMigrationsUseCase
         Log::indent();
         self::getMigrationScripts($entity);
         self::executeMigrationScripts($entity);
-        self::updateLocalVersionOnCompletion($entity);
+        if ($entity->endVersion) {
+            self::updateLocalVersionOnCompletion($entity);
+        }
         Log::outdent();
         Log::info("Finished migration from $entity->startVersion  to $entity->endVersion");
     }

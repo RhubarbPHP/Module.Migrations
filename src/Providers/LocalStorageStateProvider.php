@@ -29,12 +29,19 @@ class LocalStorageStateProvider extends MigrationsStateProvider
      */
     public function applyResumePoint(MigrationEntity $entity): void
     {
-        $resumeScript = $this->getResumeScript();
-        if ($resumeScript) {
+        $resumeScriptClass = $this->getResumeScript();
+        if ($resumeScriptClass) {
             /** @var MigrationScriptInterface $resumeScript */
+            $resumeScript = new $resumeScriptClass();
+            /** @var MigrationScriptInterface $resumeScriptClass */
             $entity->startVersion = $resumeScript->version();
             $entity->startPriority = $resumeScript->priority();
         }
+    }
+
+    public function storeResumePoint(MigrationScriptInterface $failingScript)
+    {
+        $this->setResumeScript(get_class($failingScript));
     }
 
     /**
@@ -42,12 +49,14 @@ class LocalStorageStateProvider extends MigrationsStateProvider
      */
     public function getLocalVersion(): int
     {
-        return (int)file_get_contents($this->getLocalVersionFilePath());
+        if (is_readable($this->getLocalVersionFilePath())) {
+            return (int)file_get_contents($this->getLocalVersionFilePath());
+        }
+        return 0;
     }
 
     /**
      * @param int $newLocalVersion
-     * @throws ImplementationException
      */
     public function setLocalVersion(int $newLocalVersion): void
     {
@@ -67,7 +76,10 @@ class LocalStorageStateProvider extends MigrationsStateProvider
      */
     public function getResumeScript(): string
     {
-        return file_get_contents($this->getResumeScriptFilePath());
+        if (is_readable($this->getResumeScriptFilePath())) {
+            return file_get_contents($this->getResumeScriptFilePath()) ?? '';
+        }
+        return '';
     }
 
     /**
@@ -96,6 +108,7 @@ class LocalStorageStateProvider extends MigrationsStateProvider
     public function setLocalVersionPath(string $localVersionPath): void
     {
         $this->moveLocalFile($this->getLocalVersionFilePath(), $localVersionPath);
+        $this->localVersionPath = $localVersionPath;
     }
 
     /**
@@ -104,6 +117,7 @@ class LocalStorageStateProvider extends MigrationsStateProvider
     public function setResumeScriptPath(string $resumeScriptPath): void
     {
         $this->moveLocalFile($this->getResumeScriptFilePath(), $resumeScriptPath);
+        $this->resumeScriptPath = $resumeScriptPath;
     }
 
     /**

@@ -8,11 +8,13 @@ use Rhubarb\Custard\Command\CustardCommand;
 use Rhubarb\Modules\Migrations\MigrationsManager;
 use Rhubarb\Modules\Migrations\MigrationsSettings;
 use Rhubarb\Modules\Migrations\Interfaces\MigrationScriptInterface;
+use Rhubarb\Modules\Migrations\MigrationsStateProvider;
+use Rhubarb\Modules\Migrations\UseCases\MigrationEntity;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class RunMigrationScriptCommand extends CustardCommand
+class RunSingleMigrationScriptCommand extends CustardCommand
 {
     const ARG_SCRIPT_CLASS = 'script-class';
 
@@ -29,7 +31,10 @@ class RunMigrationScriptCommand extends CustardCommand
         $scriptClass = $input->getArgument(self::ARG_SCRIPT_CLASS);
         if (is_null($scriptClass)) {
             $output->writeln("Availble Migration Scrips:");
-            foreach (MigrationsManager::getMigrationsManager()->getMigrationScripts() as $script) {
+            $entity = new MigrationEntity();
+            $entity->startVersion = MigrationsStateProvider::getProvider()->getApplicationVersion();
+            MigrationsManager::getMigrationsManager()->getMigrationScripts($entity);
+            foreach ($entity->migrationScripts as $script) {
                 $output->writeln("    -  " . get_class($script));
             }
             return;

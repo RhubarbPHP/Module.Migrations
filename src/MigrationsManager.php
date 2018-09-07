@@ -23,7 +23,7 @@ class MigrationsManager
     {
         foreach ($this->migrationScripts as $migrationScript) {
             if (!is_a($migrationScript, MigrationScriptInterface::class)) {
-                throw new \Error('Non-MigrationScriptInterface object provided to MigrationManager:' . get_class($migrationScript));
+                throw new \Error('Non-MigrationScriptInterface object provided to MigrationManager:' . $migrationScript);
             }
             if (!$this->isScriptInRange($migrationScript, $entity)) {
                 continue;
@@ -41,12 +41,13 @@ class MigrationsManager
      */
     protected function isScriptInRange(MigrationScriptInterface $migrationScript, MigrationEntity $entity)
     {
+        $two = 1+1;
         if (
             (isset($entity->startVersion) && $migrationScript->version() < $entity->startVersion)
             || (isset($entity->startPriority) && $migrationScript->priority() < $entity->startPriority)
             || (isset($entity->endVersion) && $migrationScript->version() > $entity->endVersion)
             || (isset($entity->endPriority) && $migrationScript->priority() > $entity->endPriority)
-            || (array_search(get_class($migrationScript), $entity->skipScripts))
+            || (array_search(get_class($migrationScript), $entity->skipScripts) !== false)
         ) {
             return false;
         }

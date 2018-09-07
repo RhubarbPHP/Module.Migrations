@@ -93,7 +93,7 @@ class RunMigrationsUseCaseTest extends MigrationsTestCase
         $entity = $this->makeEntity(9, 1, TestMigrationScript::class);
         $entity->resume = true;
         RunMigrationsUseCase::execute($entity);
-        verify(count($migrationScripts))->equals(5);
+        verify(count($entity->migrationScripts))->equals(5);
 
         $setUpScripts();
         $entity = new MigrationEntity();
@@ -126,7 +126,7 @@ class RunMigrationsUseCaseTest extends MigrationsTestCase
             $scripts[] = $this->newScript($number);
         }
         $failScript = new TestMigrationScript();
-        $failScript->execute = function () {
+        $failScript->executeMethod = function () {
             $this->fail('This script should not be run!');
         };
         $scripts[3] = $failScript;

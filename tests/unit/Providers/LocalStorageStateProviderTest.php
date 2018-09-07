@@ -5,12 +5,14 @@ namespace Rhubarb\Modules\Migrations\Providers;
 
 
 use Rhubarb\Modules\Migrations\Tests\Fixtures\MigrationsTestCase;
+use Rhubarb\Modules\Migrations\Tests\Fixtures\TestMigrationScript;
+use Rhubarb\Modules\Migrations\UseCases\RunMigrationsUseCase;
 
 class LocalStorageStateProviderTest extends MigrationsTestCase
 {
     public function testResumeOnScript()
     {
-        foreach (range(1, 6) as $number) {
+        foreach (range(1, 5) as $number) {
             $scripts[] = $this->newScript($number, 99, function () {
                 $this->fail('Scripts before the resume point should never run');
             });
@@ -24,7 +26,7 @@ class LocalStorageStateProviderTest extends MigrationsTestCase
         }
 
         $this->manager->registerMigrationScripts($scripts);
-        $entity = $this->makeEntity(10, 0, TestMigrationScript::class);
+        $entity = $this->makeEntity(10, 6, TestMigrationScript::class);
         RunMigrationsUseCase::execute($entity);
 
         verify($count)->equals(4);

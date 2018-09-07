@@ -2,16 +2,15 @@
 
 namespace Rhubarb\Modules\Migrations\Tests;
 
-use Rhubarb\Modules\Migrations\MigrationsSettings;
-use Rhubarb\Modules\Migrations\MigrationsStateProvider;
+use Rhubarb\Modules\Migrations\MigrationsManager;
+use Rhubarb\Modules\Migrations\Providers\LocalStorageStateProvider;
 use Rhubarb\Modules\Migrations\Tests\Fixtures\MigrationsTestCase;
-use Rhubarb\Modules\Migrations\Tests\Fixtures\TestMigrationsManager;
 
 class MigrationsStateProviderTest extends MigrationsTestCase
 {
-    /** @var TestMigrationsManager $manger */
+    /** @var MigrationsManager $manger */
     protected $manager;
-    /** @var MigrationsStateProvider $stateProvider */
+    /** @var LocalStorageStateProvider $stateProvider */
     protected $stateProvider;
 
     public function testLocalVersion()
@@ -23,8 +22,6 @@ class MigrationsStateProviderTest extends MigrationsTestCase
         $this->clearLocalVersion();
         verify(file_exists($this->stateProvider->getLocalVersionFilePath()))->false();
         verify($this->stateProvider->getLocalVersion())->equals(0);
-        verify(file_exists($this->stateProvider->getLocalVersionFilePath()))->true();
-        verify(file_get_contents($this->stateProvider->getLocalVersionFilePath()))->equals(0);
     }
 
     public function testResumeScript()
@@ -50,7 +47,7 @@ class MigrationsStateProviderTest extends MigrationsTestCase
 
         $this->clearResumeScript();
         verify($getResumeScriptFileContents())->null();
-        verify($this->stateProvider->getResumeScript())->null();
+        verify($this->stateProvider->getResumeScript())->isEmpty();
     }
 
     public function testChangingFileLocation()
@@ -70,7 +67,6 @@ class MigrationsStateProviderTest extends MigrationsTestCase
 
     private function clearLocalVersion()
     {
-        $this->stateProvider->localVersion = null;
         if (file_exists($this->stateProvider->getLocalVersionFilePath())) {
             unlink($this->stateProvider->getLocalVersionFilePath());
         }

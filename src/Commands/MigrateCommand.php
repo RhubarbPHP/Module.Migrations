@@ -6,11 +6,9 @@ namespace Rhubarb\Modules\Migrations\Commands;
 
 use PHPUnit\Runner\Exception;
 use Rhubarb\Crown\Application;
-use Rhubarb\Crown\Exceptions\ImplementationException;
 use Rhubarb\Custard\Command\CustardCommand;
 use Rhubarb\Modules\Migrations\MigrationsSettings;
 use Rhubarb\Modules\Migrations\MigrationsStateProvider;
-use Rhubarb\Modules\Migrations\UseCases\RunMigrationsUseCase;
 use Rhubarb\Modules\Migrations\UseCases\MigrationEntity;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -59,7 +57,7 @@ class MigrateCommand extends CustardCommand
         $entity->resume = $input->getOption(self::OPT_RESUME) ?? false;
 
         try {
-            RunMigrationsUseCase::execute($entity);
+            $migrationStateProvider->runMigrations($entity);
         } catch (\Error $error) {
             echo 'ERROR: ' . $error->getMessage();
         } catch (Exception $exception) {

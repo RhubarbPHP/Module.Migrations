@@ -8,7 +8,7 @@ use Rhubarb\Modules\Migrations\Interfaces\MigrationScriptInterface;
 
 class TestMigrationScript implements MigrationScriptInterface
 {
-    public $execute = null;
+    public $executeMethod = null;
 
     /**
      * Primary logic of the script should be implemented or called here.
@@ -17,10 +17,10 @@ class TestMigrationScript implements MigrationScriptInterface
      */
     public function execute()
     {
-        if (is_callable($this->execute)) {
-            return $this->execute()();
+        if (is_callable($this->executeMethod)) {
+            return ($this->executeMethod)();
         }
-        return $this->execute;
+        return $this->executeMethod;
     }
 
     /**

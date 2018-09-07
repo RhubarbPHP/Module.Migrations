@@ -9,6 +9,7 @@ use Rhubarb\Crown\DependencyInjection\ProviderInterface;
 use Rhubarb\Crown\DependencyInjection\ProviderTrait;
 use Rhubarb\Modules\Migrations\Interfaces\MigrationScriptInterface;
 use Rhubarb\Modules\Migrations\UseCases\MigrationEntity;
+use Rhubarb\Modules\Migrations\UseCases\RunMigrationsUseCase;
 
 abstract class MigrationsStateProvider implements ProviderInterface
 {
@@ -47,5 +48,9 @@ abstract class MigrationsStateProvider implements ProviderInterface
     public function getApplicationVersion(): int
     {
         return Application::current()->getVersion();
+    }
+
+    public function runMigrations(MigrationEntity $entity) {
+        RunMigrationsUseCase::execute($entity);
     }
 }

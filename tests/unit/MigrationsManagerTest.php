@@ -2,13 +2,14 @@
 
 namespace Rhubarb\Modules\Migrations\Tests;
 
-use PHPUnit\Framework\Error\Error;
+use Error;
 use Rhubarb\Modules\Migrations\Interfaces\MigrationScriptInterface;
 use Rhubarb\Modules\Migrations\MigrationsManager;
 use Rhubarb\Modules\Migrations\Tests\Fixtures\MigrationsTestCase;
 use Rhubarb\Modules\Migrations\Tests\Fixtures\TestMigrationScript;
 use Rhubarb\Modules\Migrations\Tests\Fixtures\TestMigrationsManager;
 use Rhubarb\Modules\Migrations\UseCases\MigrationEntity;
+use Rhubarb\Modules\Migrations\UseCases\RunMigrationsUseCase;
 
 class MigrationsManagerTest extends MigrationsTestCase
 {
@@ -21,17 +22,17 @@ class MigrationsManagerTest extends MigrationsTestCase
         verify($entity->migrationScripts)->isEmpty();
 
         $this->manager->registerMigrationScripts([new TestMigrationScript()]);
-        $this->manager->getMigrationScripts($entity = new MigrationEntity());
+        $this->manager->getMigrationScripts($entity = $this->makeEntity(100, 0));
         verify(count($entity->migrationScripts))->equals(1);
 
         $this->manager->registerMigrationScripts([
             new TestMigrationScript(),
-            $this->createMock(MigrationScriptInterface::class),
-            $this->createMock(MigrationScriptInterface::class),
-            $this->createMock(MigrationScriptInterface::class),
-            $this->createMock(MigrationScriptInterface::class),
+            $this->newScript(7),
+            $this->newScript(8),
+            $this->newScript(8),
+            $this->newScript(9),
         ]);
-        $this->manager->getMigrationScripts($entity = new MigrationEntity());
+        RunMigrationsUseCase::execute($entity = $this->makeEntity(10,1));
         verify(count($entity->migrationScripts))->equals(5);
 
         foreach ($entity->migrationScripts as $script) {
@@ -41,20 +42,19 @@ class MigrationsManagerTest extends MigrationsTestCase
         $this->manager->registerMigrationScripts(['LOLOLOLOL']);
         try {
             $this->manager->getMigrationScripts($entity = new MigrationEntity());
+            $this->fail('registered scripts should be objects not strings');
         } catch (Error $error) {
         }
     }
 
     public function testRegisterMigrationScripts()
     {
-        $this->manager->setMigrationScriptsClasses(['end me']);
         $this->manager->registerMigrationScripts([]);
-        verify($this->manager->getMigrationScripts())->isEmpty();
-        $this->manager->registerMigrationScripts(['I', 'walk', 'this', 'lonely', 'road']);
-        verify(count($this->manager->getMigrationScriptClasses()))->equals(5);
+        $this->manager->getMigrationScripts($entity = $this->makeEntity(100, 0));
+        verify($entity->migrationScripts)->isEmpty();
 
-        $this->manager->registerMigrationScripts([TestMigrationScript::class]);
-        verify(count($this->manager->getMigrationScriptClasses()))->equals(1);
-        verify(count($this->manager->getMigrationScripts()))->equals(1);
+        $this->manager->registerMigrationScripts([$this->newScript(), $this->newScript(), $this->newScript()]);
+        $this->manager->getMigrationScripts($entity = $this->makeEntity(100, 0));
+        verify(count($entity->migrationScripts))->equals(3);
     }
 }
