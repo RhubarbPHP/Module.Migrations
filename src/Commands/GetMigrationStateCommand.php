@@ -12,12 +12,12 @@ use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class GetMigrationSettingsCommand extends CustardCommand
+class GetMigrationStateCommand extends CustardCommand
 {
     protected function configure()
     {
         $this->setName('migrations:settings')
-            ->setDescription('Get the current local version, application version and resume script');
+            ->setDescription('Output the current local and application versions');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -33,7 +33,7 @@ class GetMigrationSettingsCommand extends CustardCommand
 
         $output->getFormatter()->setStyle('b', new OutputFormatterStyle('green', null, ['bold', 'underscore']));
         $output->writeln(
-            $tag("Current Migration Settings:", 'b')
+            $tag("Current Migration State:", 'b')
         );
         $output->getFormatter()->setStyle('i', new OutputFormatterStyle('green'));
         $output->writeln(
@@ -42,8 +42,6 @@ class GetMigrationSettingsCommand extends CustardCommand
         $output->writeln(
             $tag($padr("Local Version:") . $migrationStateProvider->getLocalVersion(), 'i')
         );
-        $output->writeln(
-            $tag($padr("Resume Script:") . ($migrationStateProvider->getResumeScript() ?? 'none'), 'i')
-        );
+
     }
 }

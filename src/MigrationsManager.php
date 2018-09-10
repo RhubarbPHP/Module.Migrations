@@ -7,7 +7,6 @@ namespace Rhubarb\Modules\Migrations;
 use Rhubarb\Crown\Application;
 use Rhubarb\Crown\DependencyInjection\SingletonTrait;
 use Rhubarb\Modules\Migrations\Interfaces\MigrationScriptInterface;
-use Rhubarb\Modules\Migrations\UseCases\MigrationEntity;
 
 class MigrationsManager
 {
@@ -16,58 +15,45 @@ class MigrationsManager
     private $migrationScripts = [];
 
     /**
-     * @param int|null $minVersion
-     * @param int|null $maxVersion
+     * @param int $from
+     * @param int $to
+     * @param array $skipScripts
+     * @return MigrationScriptInterface[]
      */
-    public function getMigrationScripts(MigrationEntity $entity)
+    public function getMigrationScripts(int $from, int $to, array $skipScripts = []): array
     {
+        $migrationScripts = [];
+        $provider = MigrationsStateProvider::getProvider();
         foreach ($this->migrationScripts as $migrationScript) {
+            $scriptClass = get_class($migrationScript);
             if (!is_a($migrationScript, MigrationScriptInterface::class)) {
                 throw new \Error('Non-MigrationScriptInterface object provided to MigrationManager:' . $migrationScript);
             }
-            if (!$this->isScriptInRange($migrationScript, $entity)) {
+            if (
+                $migrationScript->version() < $from
+                || $migrationScript->version() > $to
+                || array_search($scriptClass, $skipScripts) !== false
+            ) {
                 continue;
             }
-
-            $entity->migrationScripts[] = $migrationScript;
-        }
-        $this->sortMigrationScripts($entity->migrationScripts);
-    }
-
-    /**
-     * @param MigrationScriptInterface $migrationScript
-     * @param MigrationEntity          $entity
-     * @return bool
-     */
-    protected function isScriptInRange(MigrationScriptInterface $migrationScript, MigrationEntity $entity)
-    {
-        $two = 1+1;
-        if (
-            (isset($entity->startVersion) && $migrationScript->version() < $entity->startVersion)
-            || (isset($entity->startPriority) && $migrationScript->priority() < $entity->startPriority)
-            || (isset($entity->endVersion) && $migrationScript->version() > $entity->endVersion)
-            || (isset($entity->endPriority) && $migrationScript->priority() > $entity->endPriority)
-            || (array_search(get_class($migrationScript), $entity->skipScripts) !== false)
-        ) {
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * @param MigrationScriptInterface[] $migrationScripts
-     * @return MigrationScriptInterface[]
-     */
-    protected function sortMigrationScripts(&$migrationScripts): array
-    {
-        usort($migrationScripts, function (MigrationScriptInterface $a, MigrationScriptInterface $b) {
-            if ($a->version() != $b->version()) {
-                return $a->version() <=> $b->version();
-            } else {
-                return $b->priority() <=> $a->priority();
+            if ($provider->isScriptComplete($scriptClass)) {
+                continue;
             }
+            $migrationScripts[] = $migrationScript;
+        }
+        usort($migrationScripts, function (MigrationScriptInterface $a, MigrationScriptInterface $b) {
+            return $a->version() <=> $b->version();
         });
+
         return $migrationScripts;
+    }
+
+    public function getRegisteredMigrationScriptClasses() {
+        $classes = [];
+        foreach ($this->migrationScripts as $migrationScript) {
+            $classes[] = get_class($migrationScript);
+        }
+        return $classes;
     }
 
     /**

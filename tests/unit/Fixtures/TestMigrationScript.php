@@ -8,7 +8,15 @@ use Rhubarb\Modules\Migrations\Interfaces\MigrationScriptInterface;
 
 class TestMigrationScript implements MigrationScriptInterface
 {
-    public $executeMethod = null;
+    private $execute;
+    private $version;
+
+    public function __construct(int $version, $execute = null)
+    {
+        $this->version = $version;
+        $this->execute = $execute;
+    }
+
 
     /**
      * Primary logic of the script should be implemented or called here.
@@ -17,10 +25,10 @@ class TestMigrationScript implements MigrationScriptInterface
      */
     public function execute()
     {
-        if (is_callable($this->executeMethod)) {
-            return ($this->executeMethod)();
+        if (is_callable($this->execute)) {
+            return ($this->execute)();
         }
-        return $this->executeMethod;
+        return $this->execute;
     }
 
     /**
@@ -30,17 +38,6 @@ class TestMigrationScript implements MigrationScriptInterface
      */
     public function version(): int
     {
-        return 6;
-    }
-
-    /**
-     * Implement this method to set the priority of a script.
-     * Scripts with higher priority are ran before for the same application version.
-     *
-     * @return int
-     */
-    public function priority(): int
-    {
-        return 1;
+        return $this->version;
     }
 }

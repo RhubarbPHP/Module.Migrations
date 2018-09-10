@@ -8,7 +8,7 @@ use Rhubarb\Crown\Application;
 use Rhubarb\Crown\DependencyInjection\ProviderInterface;
 use Rhubarb\Crown\DependencyInjection\ProviderTrait;
 use Rhubarb\Modules\Migrations\Interfaces\MigrationScriptInterface;
-use Rhubarb\Modules\Migrations\UseCases\MigrationEntity;
+use Rhubarb\Modules\Migrations\UseCases\RunMigrationsEntity;
 use Rhubarb\Modules\Migrations\UseCases\RunMigrationsUseCase;
 
 abstract class MigrationsStateProvider implements ProviderInterface
@@ -28,29 +28,19 @@ abstract class MigrationsStateProvider implements ProviderInterface
      */
     abstract public function setLocalVersion(int $newLocalVersion): void;
 
-    /**
-     * Updates the Start, End and Priority points on the Migration Entity to change which scripts get ran.
-     *
-     * @param MigrationEntity $entity
-     */
-    public function applyResumePoint(MigrationEntity $entity): void
-    {
-        // No default behaviour, nor a demand that it be implemented.
-    }
+    abstract public function markScriptCompleted(MigrationScriptInterface $migrationScript): void;
 
-    /**
-     * @param MigrationScriptInterface $failingScript
-     */
-    public function storeResumePoint(MigrationScriptInterface $failingScript) {
+    abstract public function isScriptComplete(string $className): bool;
 
-    }
+    abstract public function getCompletedScripts(): array;
 
-    public function getApplicationVersion(): int
+    public static function getApplicationVersion(): int
     {
         return Application::current()->getVersion();
     }
 
-    public function runMigrations(MigrationEntity $entity) {
+    public function runMigrations(RunMigrationsEntity $entity)
+    {
         RunMigrationsUseCase::execute($entity);
     }
 }

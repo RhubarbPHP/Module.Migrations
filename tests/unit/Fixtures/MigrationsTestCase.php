@@ -2,58 +2,53 @@
 
 namespace Rhubarb\Modules\Migrations\Tests\Fixtures;
 
+use Rhubarb\Crown\Tests\Fixtures\Modules\UnitTestingModule;
 use Rhubarb\Crown\Tests\Fixtures\TestCases\RhubarbTestCase;
 use Rhubarb\Modules\Migrations\Interfaces\MigrationScriptInterface;
 use Rhubarb\Modules\Migrations\MigrationsManager;
 use Rhubarb\Modules\Migrations\MigrationsModule;
 use Rhubarb\Modules\Migrations\MigrationsStateProvider;
-use Rhubarb\Modules\Migrations\Providers\LocalStorageStateProvider;
-use Rhubarb\Modules\Migrations\UseCases\MigrationEntity;
-use Rhubarb\Stem\Models\Model;
-use Rhubarb\Stem\Repositories\Offline\Offline;
-use Rhubarb\Stem\Repositories\Repository;
-use Rhubarb\Stem\Schema\SolutionSchema;
+use Rhubarb\Modules\Migrations\UseCases\RunMigrationsEntity;
 
 class MigrationsTestCase extends RhubarbTestCase
 {
+    /** @var TestApplication $application */
+    protected $application;
     /** @var MigrationsManager $manager */
     protected $manager;
-    /** @var LocalStorageStateProvider $stateProvider */
-    protected $stateProvider;
+    /** @var MigrationsStateProvider $provider */
+    protected $provider;
 
     protected function setUp()
     {
         $parent = parent::setUp();
 
-        $this->application->registerModule(new MigrationsModule());
+        $this->application = new TestApplication();
+        $this->application->unitTesting = true;
+        $this->application->context()->simulateNonCli = false;
+        $this->application->registerModule(new UnitTestingModule());
+        $this->application->registerModule(new MigrationsModule(TestMigrationsStateProvider::class));
         $this->application->initialiseModules();
 
-        Repository::setDefaultRepositoryClassName(Offline::class);
-        Model::deleteRepositories();
-        SolutionSchema::registerSchema("Schema", MigrationsTestSchema::class);
-
         $this->manager = MigrationsManager::getMigrationsManager();
-        MigrationsStateProvider::setProviderClassName(LocalStorageStateProvider::class);
-        $this->stateProvider = MigrationsStateProvider::getProvider();
+        $this->provider = MigrationsStateProvider::getProvider();
+        /** @noinspection PhpUndefinedMethodInspection */
+        $this->provider->reset();
 
         return $parent;
     }
 
     /**
-     * @param int      $version
-     * @param int      $priority
+     * @param int $version
+     * @param int $priority
      * @param callable $execute
-     * @return \PHPUnit\Framework\MockObject\MockObject
+     * @return MigrationScriptInterface
      */
-    protected function newScript($version = null, $priority = null, $execute = null)
+    protected function newScript($version = null, $execute = null)
     {
         $script = $this->createMock(MigrationScriptInterface::class);
         if (isset($version)) {
             $script->method('version')->willReturn($version);
-
-        }
-        if (isset($priority)) {
-            $script->method('priority')->willReturn($priority);
         }
         if (isset($execute)) {
             $script->method('execute')->willReturnCallback($execute);
@@ -61,20 +56,31 @@ class MigrationsTestCase extends RhubarbTestCase
         return $script;
     }
 
-    /**
-     * @param int    $startVersion
-     * @param int    $endVersion
-     * @param string $resumeScript
-     * @return MigrationEntity
-     */
-    protected function makeEntity($endVersion = null, $startVersion = null, $resumeScript = null)
+    protected function newScriptArray(...$versions): array
     {
-        $entity = new MigrationEntity();
-        if (isset($startVersion)) {
-            $entity->startVersion = $startVersion;
+        $return = [];
+        foreach ($versions as $version) {
+            $return[] = $this->newScript($version);
         }
-        $entity->endVersion = $endVersion;
-        $entity->resumeScript = $resumeScript;
+        return $return;
+    }
+
+    /**
+     * @param int $startVersion
+     * @param int $applicationVersion
+     * @param string $resumeScript
+     * @return RunMigrationsEntity
+     */
+    protected function newEntity($localVersion = false, $applicationVersion = false)
+    {
+        if ($localVersion) {
+            $this->provider->setLocalVersion($localVersion);
+        }
+        if ($applicationVersion) {
+            $this->application->setVersion($applicationVersion);
+        }
+        $entity = new RunMigrationsEntity();
+        $entity->endVersion = $applicationVersion;
         return $entity;
     }
 }

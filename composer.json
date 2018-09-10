@@ -24,9 +24,9 @@
     "rhubarbphp/scaffold-application-settings": "^1.0"
   },
   "require-dev": {
-    "phpunit/phpunit": "^6.5",
-    "codeception/codeception": "2.3.*",
-    "codeception/verify": "^1.0"
+    "phpunit/phpunit": "*",
+    "codeception/codeception": "*",
+    "codeception/verify": "*"
   },
   "config": {
     "bin-dir": "bin/"

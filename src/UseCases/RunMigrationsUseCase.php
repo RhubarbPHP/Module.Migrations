@@ -14,32 +14,31 @@ class RunMigrationsUseCase
      * @param int $targetVersion
      * @throws Error
      */
-    public static function execute(MigrationEntity $entity)
+    public static function execute(RunMigrationsEntity $entity)
     {
         Log::info("Beginning migration from $$entity->startVersion to $entity->endVersion");
         Log::indent();
         self::getMigrationScripts($entity);
         self::executeMigrationScripts($entity);
-        if ($entity->endVersion) {
-            self::updateLocalVersionOnCompletion($entity);
-        }
+        self::updateLocalVersionOnCompletion($entity);
         Log::outdent();
         Log::info("Finished migration from $entity->startVersion  to $entity->endVersion");
     }
 
     /**
-     * @param MigrationEntity $entity
+     * @param RunMigrationsEntity $entity
      */
-    private static function executeMigrationScripts(MigrationEntity $entity)
+    private static function executeMigrationScripts(RunMigrationsEntity $entity)
     {
         foreach ($entity->migrationScripts as $migrationScript) {
             try {
                 $scriptClass = get_class($migrationScript);
-                Log::info("Executing Script $scriptClass for version {$migrationScript->version()} with priority {$migrationScript->priority()}");
+                Log::info("Executing script $scriptClass at version {$migrationScript->version()}");
+                self::beforeScriptExecution($migrationScript);
                 $migrationScript->execute();
-                self::updateLocalVersionForScript($migrationScript);
+                self::afterSuccessfulScriptExecution($migrationScript);
             } catch (Error $error) {
-                self::storeResumePoint($migrationScript);
+                self::afterFailedScriptExecution($migrationScript, $error);
                 Log::outdent();
                 Log::error("Failed migration from $entity->startVersion to $entity->endVersion at script $scriptClass");
                 throw $error;
@@ -47,28 +46,33 @@ class RunMigrationsUseCase
         }
     }
 
-    /**
-     * @param MigrationScriptInterface $failingScript
-     */
-    protected static function storeResumePoint(MigrationScriptInterface $failingScript)
+    protected static function beforeScriptExecution(MigrationScriptInterface $migrationScript)
     {
-        MigrationsStateProvider::getProvider()->storeResumePoint($failingScript);
+
+    }
+
+    protected static function afterSuccessfulScriptExecution(MigrationScriptInterface $migrationScript)
+    {
+        self::markScriptCompleted($migrationScript);
+        self::updateLocalVersion($migrationScript->version());
+    }
+
+    protected static function afterFailedScriptExecution(MigrationScriptInterface $migrationScript, Error $error)
+    {
+
+    }
+
+    protected static function markScriptCompleted(MigrationScriptInterface $migrationScript)
+    {
+        MigrationsStateProvider::getProvider()->markScriptCompleted($migrationScript);
     }
 
     /**
-     * @param MigrationEntity $entity
+     * @param RunMigrationsEntity $entity
      */
-    protected static function updateLocalVersionOnCompletion(MigrationEntity $entity)
+    protected static function updateLocalVersionOnCompletion(RunMigrationsEntity $entity)
     {
         self::updateLocalVersion($entity->endVersion);
-    }
-
-    /**
-     * @param MigrationScriptInterface $migrationScript
-     */
-    protected static function updateLocalVersionForScript(MigrationScriptInterface $migrationScript)
-    {
-        self::updateLocalVersion($migrationScript->version());
     }
 
     /**
@@ -83,11 +87,13 @@ class RunMigrationsUseCase
      * @param int $currentVersion
      * @param int $targetVersion
      */
-    private static function getMigrationScripts(MigrationEntity $entity)
+    private static function getMigrationScripts(RunMigrationsEntity $entity)
     {
-        if ($entity->resume) {
-            MigrationsStateProvider::getProvider()->applyResumePoint($entity);
-        }
-        MigrationsManager::getMigrationsManager()->getMigrationScripts($entity);
+        $entity->migrationScripts =
+            MigrationsManager::getMigrationsManager()->getMigrationScripts(
+                $entity->startVersion,
+                $entity->endVersion,
+                $entity->skipScripts
+            );
     }
 }

@@ -17,12 +17,4 @@ interface MigrationScriptInterface
      * @return int
      */
     public function version(): int;
-
-    /**
-     * Implement this method to set the priority of a script.
-     * Scripts with higher priority are ran before for the same application version.
-     *
-     * @return int
-     */
-    public function priority(): int;
 }
