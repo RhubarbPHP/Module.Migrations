@@ -11,8 +11,9 @@ use Rhubarb\Modules\Migrations\MigrationsStateProvider;
 class RunMigrationsUseCase
 {
     /**
-     * @param int $targetVersion
-     * @throws Error
+     * @param int $start
+     * @param int $end
+     * @param array $skip
      */
     public static function execute(int $start, int $end, array $skip = [])
     {
@@ -24,6 +25,9 @@ class RunMigrationsUseCase
         Log::info("Finished migration from $start  to $end");
     }
 
+    /**
+     * @param array $migrationScripts
+     */
     private static function executeMigrationScripts(array $migrationScripts)
     {
         foreach ($migrationScripts as $migrationScript) {
@@ -42,27 +46,43 @@ class RunMigrationsUseCase
         }
     }
 
+    /**
+     * @param MigrationScriptInterface $migrationScript
+     */
     protected static function beforeScriptExecution(MigrationScriptInterface $migrationScript)
     {
 
     }
 
+    /**
+     * @param MigrationScriptInterface $migrationScript
+     */
     protected static function afterSuccessfulScriptExecution(MigrationScriptInterface $migrationScript)
     {
         self::markScriptCompleted($migrationScript);
         self::updateLocalVersion($migrationScript->version());
     }
 
+    /**
+     * @param MigrationScriptInterface $migrationScript
+     * @param Error $error
+     */
     protected static function afterFailedScriptExecution(MigrationScriptInterface $migrationScript, Error $error)
     {
 
     }
 
+    /**
+     * @param MigrationScriptInterface $migrationScript
+     */
     protected static function markScriptCompleted(MigrationScriptInterface $migrationScript)
     {
         MigrationsStateProvider::getProvider()->markScriptCompleted($migrationScript);
     }
 
+    /**
+     * @param $end
+     */
     protected static function updateLocalVersionOnCompletion($end)
     {
         self::updateLocalVersion($end);
@@ -77,8 +97,12 @@ class RunMigrationsUseCase
     }
 
     /**
-     * @param int $currentVersion
-     * @param int $targetVersion
+     * Retrieve the registered migration scripts relevant to the current migration range.
+     *
+     * @param int $start
+     * @param int $end
+     * @param array $skip
+     * @return MigrationScriptInterface[]
      */
     private static function getMigrationScripts(int $start, int $end, array $skip)
     {

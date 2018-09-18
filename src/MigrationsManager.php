@@ -15,9 +15,11 @@ class MigrationsManager
     private $migrationScripts = [];
 
     /**
+     * Returns an ordered array of MigrationScriptInterface objects within the range specified.
+     *
      * @param int $from
      * @param int $to
-     * @param array $skipScripts
+     * @param string[] $skipScripts
      * @return MigrationScriptInterface[]
      */
     public function getMigrationScripts(int $from, int $to, array $skipScripts = []): array
@@ -48,7 +50,11 @@ class MigrationsManager
         return $migrationScripts;
     }
 
-    public function getRegisteredMigrationScriptClasses() {
+    /**
+     * @return string[]
+     */
+    public function getRegisteredMigrationScriptClasses(): array
+    {
         $classes = [];
         foreach ($this->migrationScripts as $migrationScript) {
             $classes[] = get_class($migrationScript);
@@ -57,7 +63,7 @@ class MigrationsManager
     }
 
     /**
-     * Call this method in the application to define which MigrationScripts should be loaded/processed.
+     * Defines which MigrationScripts should be checked when running migrations.
      * Alternatively, extend this method to avoid cluttering the Application class.
      *
      * @param MigrationScriptInterface[] $migrationScripts
