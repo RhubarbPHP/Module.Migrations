@@ -7,7 +7,6 @@ namespace Rhubarb\Modules\Migrations\Commands;
 use PHPUnit\Runner\Exception;
 use Rhubarb\Custard\Command\CustardCommand;
 use Rhubarb\Modules\Migrations\MigrationsStateProvider;
-use Rhubarb\Modules\Migrations\UseCases\RunMigrationsEntity;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -31,11 +30,12 @@ class RunMigrationsCommand extends CustardCommand
     {
         $migrationStateProvider = MigrationsStateProvider::getProvider();
 
-        $entity = new RunMigrationsEntity();
-        $entity->skipScripts = $input->getOption(self::OPT_SKIP_SCRIPTS) ?? [];
+        $startVersion = $migrationStateProvider->getLocalVersion();
+        $endVersion = $migrationStateProvider::getApplicationVersion();
+        $skipScripts = $input->getOption(self::OPT_SKIP_SCRIPTS) ?? [];
 
         try {
-            $migrationStateProvider->runMigrations($entity);
+            $migrationStateProvider->runMigrations($startVersion, $endVersion, $skipScripts);
         } catch (\Error $error) {
             echo 'ERROR: ' . $error->getMessage();
         } catch (Exception $exception) {

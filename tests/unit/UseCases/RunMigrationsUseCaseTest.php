@@ -1,4 +1,4 @@
-<?php /** @noinspection PhpUnhandledExceptionInspection */
+<?php
 
 namespace Rhubarb\Modules\Migrations\Tests\UseCases;
 
@@ -18,18 +18,17 @@ class RunMigrationsUseCaseTest extends MigrationsTestCase
 
     public function testLocalVersionUpdates()
     {
-        $this->provider->runMigrations($this->newEntity(1, 7));
+        $this->provider->runMigrations(1, 7);
         verify($this->provider->getLocalVersion())->equals(7);
 
         $this->manager->registerMigrationScripts([$this->newScript(5)]);
-        $this->provider->runMigrations($this->newEntity(1, 7));
+        $this->provider->runMigrations(1, 7);
         verify($this->provider->getLocalVersion())->equals(7);
     }
 
     public function testLocalVersionUpdatesWithErrors()
     {
         try {
-            $entity = $this->newEntity(1, 4);
             $this->manager->registerMigrationScripts(
                 [
                     $this->newScript(3, function () {
@@ -38,7 +37,7 @@ class RunMigrationsUseCaseTest extends MigrationsTestCase
                     $this->newScript(2)
                 ]
             );
-            $this->provider->runMigrations($entity);
+            $this->provider->runMigrations(1, 4);
             $this->fail('Execution should have halted when the error was thrown');
         } catch (\Error $error) {
         } finally {
@@ -56,7 +55,7 @@ class RunMigrationsUseCaseTest extends MigrationsTestCase
             });
         }
         $this->manager->registerMigrationScripts($migrationScripts);
-        $this->provider->runMigrations($this->newEntity(1, 6));
+        $this->provider->runMigrations(1, 6);
         verify($executedScripts)->equals(4);
     }
 
@@ -96,8 +95,6 @@ class RunMigrationsUseCaseTest extends MigrationsTestCase
 
     public function testSkipScriptsDoNotRun()
     {
-        $entity = $this->newEntity(1, 10);
-        $entity->skipScripts[] = TestMigrationScript::class;
         $this->manager->registerMigrationScripts(
             array_merge(
                 [
@@ -109,7 +106,7 @@ class RunMigrationsUseCaseTest extends MigrationsTestCase
                 $this->newScriptArray()
             )
         );
-        $this->provider->runMigrations($entity);
+        $this->provider->runMigrations(1, 10, [TestMigrationScript::class]);
         // Failing script was skipped
         verify($this->provider->getLocalVersion())->equals(10);
     }
@@ -129,7 +126,7 @@ class RunMigrationsUseCaseTest extends MigrationsTestCase
             });
         }
         $this->manager->registerMigrationScripts($migrationScripts);
-        $this->provider->runMigrations($this->newEntity(1, 6));
+        $this->provider->runMigrations(1, 6);
     }
 
     public function testExecutionStopsOnError()
@@ -149,7 +146,7 @@ class RunMigrationsUseCaseTest extends MigrationsTestCase
         );
 
         try {
-            $this->provider->runMigrations($this->newEntity(1, 6));
+            $this->provider->runMigrations(1, 6);
             $this->fail("Failed to stop migration on error");
         } catch (\Error $error) {
             verify($error->getMessage())->equals("Error Thrown");
@@ -159,7 +156,7 @@ class RunMigrationsUseCaseTest extends MigrationsTestCase
     public function testScriptsMarkedComplete()
     {
         $this->manager->registerMigrationScripts([new TestMigrationScript(2)]);
-        $this->provider->runMigrations($this->newEntity(1, 5));
+        $this->provider->runMigrations(1, 5);
         verify($this->provider->getCompletedScripts())->count(1);
         verify($this->provider->getCompletedScripts()[0])->equals(TestMigrationScript::class);
     }
@@ -191,12 +188,12 @@ class RunMigrationsUseCaseTest extends MigrationsTestCase
         );
 
         try {
-            $this->provider->runMigrations($entity = $this->newEntity(1, 10));
+            $this->provider->runMigrations(1, 10);
             $this->fail('execution should have stopped when an error was thrown.');
         } catch (\Error $error) {
             verify($error->getMessage())->equals('Fails the first time it is ran.');
             verify($this->provider->getLocalVersion())->equals(5);
-            $this->provider->runMigrations($entity);
+            $this->provider->runMigrations(1, 10);
             verify($this->provider->getLocalVersion())->equals(10);
         }
     }

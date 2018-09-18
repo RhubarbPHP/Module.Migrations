@@ -8,7 +8,6 @@ use Rhubarb\Modules\Migrations\Interfaces\MigrationScriptInterface;
 use Rhubarb\Modules\Migrations\MigrationsManager;
 use Rhubarb\Modules\Migrations\MigrationsModule;
 use Rhubarb\Modules\Migrations\MigrationsStateProvider;
-use Rhubarb\Modules\Migrations\UseCases\RunMigrationsEntity;
 
 class MigrationsTestCase extends RhubarbTestCase
 {
@@ -63,24 +62,5 @@ class MigrationsTestCase extends RhubarbTestCase
             $return[] = $this->newScript($version);
         }
         return $return;
-    }
-
-    /**
-     * @param int $startVersion
-     * @param int $applicationVersion
-     * @param string $resumeScript
-     * @return RunMigrationsEntity
-     */
-    protected function newEntity($localVersion = false, $applicationVersion = false)
-    {
-        if ($localVersion) {
-            $this->provider->setLocalVersion($localVersion);
-        }
-        if ($applicationVersion) {
-            $this->application->setVersion($applicationVersion);
-        }
-        $entity = new RunMigrationsEntity();
-        $entity->endVersion = $applicationVersion;
-        return $entity;
     }
 }

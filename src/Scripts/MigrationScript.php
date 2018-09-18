@@ -9,7 +9,7 @@ abstract class MigrationScript implements MigrationScriptInterface
     /** @var int $version */
     private $version;
 
-    public final function __construct($version)
+    public final function __construct(int $version)
     {
         $this->version = $version;
     }

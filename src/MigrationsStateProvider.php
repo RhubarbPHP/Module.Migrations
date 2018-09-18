@@ -8,7 +8,6 @@ use Rhubarb\Crown\Application;
 use Rhubarb\Crown\DependencyInjection\ProviderInterface;
 use Rhubarb\Crown\DependencyInjection\ProviderTrait;
 use Rhubarb\Modules\Migrations\Interfaces\MigrationScriptInterface;
-use Rhubarb\Modules\Migrations\UseCases\RunMigrationsEntity;
 use Rhubarb\Modules\Migrations\UseCases\RunMigrationsUseCase;
 
 abstract class MigrationsStateProvider implements ProviderInterface
@@ -18,18 +17,11 @@ abstract class MigrationsStateProvider implements ProviderInterface
     /** @var int $localVersion */
     protected $localVersion;
 
-    /**
-     * @return int
-     */
-    abstract public function getLocalVersion(): int;
 
-    /**
-     * @param int $newLocalVersion
-     */
+    abstract public function getLocalVersion(): int;
     abstract public function setLocalVersion(int $newLocalVersion): void;
 
     abstract public function markScriptCompleted(MigrationScriptInterface $migrationScript): void;
-
     abstract public function isScriptComplete(string $className): bool;
 
     abstract public function getCompletedScripts(): array;
@@ -39,8 +31,8 @@ abstract class MigrationsStateProvider implements ProviderInterface
         return Application::current()->getVersion();
     }
 
-    public function runMigrations(RunMigrationsEntity $entity)
+    public function runMigrations(int $start, int $end, array $skip = [])
     {
-        RunMigrationsUseCase::execute($entity);
+        RunMigrationsUseCase::execute($start, $end, $skip);
     }
 }

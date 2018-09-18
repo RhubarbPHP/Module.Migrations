@@ -1,4 +1,6 @@
-<?php /** @noinspection PhpUndefinedMethodInspection */
+<?php
+/** @noinspection PhpUndefinedMethodInspection */
+
 /** @noinspection PhpUndefinedClassInspection */
 
 use Rhubarb\Modules\Migrations\Interfaces\MigrationScriptInterface;
@@ -11,9 +13,9 @@ class ExampleMigrationScript implements MigrationScriptInterface
      */
     public function execute()
     {
-        foreach (Image::find(new Equals('active', false)) as $image) {
-            unlink($image->filePath);
-            $image->delete();
+        foreach (scandir('../assets/images') as $imageFile) {
+            file_put_contents('../content/images/new', file_get_contents($imageFile));
+            unlink($imageFile);
         }
     }
 
@@ -27,14 +29,4 @@ class ExampleMigrationScript implements MigrationScriptInterface
         return 17;
     }
 
-    /**
-     * Implement this method to set the priority of a script.
-     * Scripts with higher priority are ran before for the same application version.
-     *
-     * @return int
-     */
-    public function priority(): int
-    {
-        return 0;
-    }
 }

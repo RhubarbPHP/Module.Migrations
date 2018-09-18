@@ -7,12 +7,12 @@ namespace Rhubarb\Modules\Migrations\Interfaces;
 interface MigrationScriptInterface
 {
     /**
-     * Primary logic of the script should be implemented or called here.
+     * The logic of a migration is implemented through this method
      */
     public function execute();
 
     /**
-     * The application version this script should be ran on
+     * Used to determine on which application version to execute this script
      *
      * @return int
      */
