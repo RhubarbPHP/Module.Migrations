@@ -7,54 +7,68 @@ use Rhubarb\Modules\Migrations\Interfaces\MigrationScriptInterface;
 use Rhubarb\Modules\Migrations\MigrationsManager;
 use Rhubarb\Modules\Migrations\Tests\Fixtures\MigrationsTestCase;
 use Rhubarb\Modules\Migrations\Tests\Fixtures\TestMigrationScript;
-use Rhubarb\Modules\Migrations\Tests\Fixtures\TestMigrationsManager;
-use Rhubarb\Modules\Migrations\UseCases\MigrationEntity;
-use Rhubarb\Modules\Migrations\UseCases\RunMigrationsUseCase;
 
 class MigrationsManagerTest extends MigrationsTestCase
 {
     /** @var MigrationsManager $manager */
     protected $manager;
 
-    public function testGetMigrationScripts()
+    public function testMigrationScriptsReturned()
     {
-        $this->manager->getMigrationScripts($entity = new MigrationEntity());
-        verify($entity->migrationScripts)->isEmpty();
-
-        $this->manager->registerMigrationScripts([new TestMigrationScript()]);
-        $this->manager->getMigrationScripts($entity = $this->makeEntity(100, 0));
-        verify(count($entity->migrationScripts))->equals(1);
-
-        $this->manager->registerMigrationScripts([
-            new TestMigrationScript(),
-            $this->newScript(7),
-            $this->newScript(8),
-            $this->newScript(8),
-            $this->newScript(9),
-        ]);
-        RunMigrationsUseCase::execute($entity = $this->makeEntity(10,1));
-        verify(count($entity->migrationScripts))->equals(5);
-
-        foreach ($entity->migrationScripts as $script) {
+        $this->manager->registerMigrationScripts($this->newScriptArray(1, 2, 3, 4));
+        verify(is_array($this->manager->getMigrationScripts(0, 5)))->true();
+        verify($this->manager->getMigrationScripts(0, 5))->count(4);
+        foreach ($this->manager->getMigrationScripts(0, 5) as $script) {
             verify($script)->isInstanceOf(MigrationScriptInterface::class);
         }
+    }
 
-        $this->manager->registerMigrationScripts(['LOLOLOLOL']);
-        try {
-            $this->manager->getMigrationScripts($entity = new MigrationEntity());
-            $this->fail('registered scripts should be objects not strings');
-        } catch (Error $error) {
+    public function testMigrationScriptsReturnedInRange()
+    {
+        $this->manager->registerMigrationScripts($this->newScriptArray(1, 2, 3, 4, 5, 6, 7, 7, 7, 7, 8, 9, 10));
+        verify($this->manager->getMigrationScripts(5, 8))->count(7);
+    }
+
+    public function testMigrationScriptsReturnedSorted()
+    {
+        $this->manager->registerMigrationScripts($this->newScriptArray(9, 1, 2, 3, 8, 7, 4, 6, 5));
+        $scripts = $this->manager->getMigrationScripts(0, 10);
+        foreach (range(1, 9) as $version) {
+            verify($scripts[$version - 1]->version())->equals($version);
         }
+    }
+
+    public function testSkipScriptsNotReturned()
+    {
+        $this->manager->registerMigrationScripts(
+            array_merge($this->newScriptArray(1, 2, 3), [new TestMigrationScript(2)])
+        );
+        verify($this->manager->getMigrationScripts(0, 10))->count(4);
+        verify($this->manager->getMigrationScripts(0, 10, [TestMigrationScript::class]))->count(3);
     }
 
     public function testRegisterMigrationScripts()
     {
         $this->manager->registerMigrationScripts([]);
-        $this->manager->getMigrationScripts($entity = $this->makeEntity(100, 0));
-        verify($entity->migrationScripts)->isEmpty();
+        verify($this->manager->getMigrationScripts(-1000, 1000))->isEmpty();
 
-        $this->manager->registerMigrationScripts([$this->newScript(), $this->newScript(), $this->newScript()]);
-        $this->manager->getMigrationScripts($entity = $this->makeEntity(100, 0));
-        verify(count($entity->migrationScripts))->equals(3);
+        $this->manager->registerMigrationScripts($this->newScriptArray(3, 4, 5));
+        verify($this->manager->getMigrationScripts(-1000, 1000))->count(3);
+    }
+
+    public function testRegisterInvalidMigrationScripts()
+    {
+        $this->manager->registerMigrationScripts(['fail', 'walk', 'this', 'lonely', 'road']);
+        try {
+            $this->manager->getMigrationScripts(0, 10);
+            $this->fail('invalid scripts should stop execution');
+        } catch (Error $error) {
+            verify($error->getMessage())->contains('fail');
+        }
+    }
+
+    public function testGetScriptClasses() {
+        $this->manager->registerMigrationScripts($this->newScriptArray(1,2,3));
+        verify($this->manager->getRegisteredMigrationScriptClasses())->count(3);
     }
 }

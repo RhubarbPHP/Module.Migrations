@@ -8,7 +8,6 @@ use Rhubarb\Crown\Application;
 use Rhubarb\Crown\DependencyInjection\ProviderInterface;
 use Rhubarb\Crown\DependencyInjection\ProviderTrait;
 use Rhubarb\Modules\Migrations\Interfaces\MigrationScriptInterface;
-use Rhubarb\Modules\Migrations\UseCases\MigrationEntity;
 use Rhubarb\Modules\Migrations\UseCases\RunMigrationsUseCase;
 
 abstract class MigrationsStateProvider implements ProviderInterface
@@ -19,38 +18,60 @@ abstract class MigrationsStateProvider implements ProviderInterface
     protected $localVersion;
 
     /**
+     * Returns the locally stored version number of the application based on when migrations were last run.
+     *
      * @return int
      */
     abstract public function getLocalVersion(): int;
 
     /**
+     * Updates the locally stored version number.
+     *
      * @param int $newLocalVersion
      */
     abstract public function setLocalVersion(int $newLocalVersion): void;
 
     /**
-     * Updates the Start, End and Priority points on the Migration Entity to change which scripts get ran.
+     * Locally stores a MigrationScript as having been successfully executed.
      *
-     * @param MigrationEntity $entity
+     * @param MigrationScriptInterface $migrationScript
      */
-    public function applyResumePoint(MigrationEntity $entity): void
-    {
-        // No default behaviour, nor a demand that it be implemented.
-    }
+    abstract public function markScriptCompleted(MigrationScriptInterface $migrationScript): void;
 
     /**
-     * @param MigrationScriptInterface $failingScript
+     * Checks if a migration script has already been successfully executed locally.
+     *
+     * @param string $className
+     * @return bool
      */
-    public function storeResumePoint(MigrationScriptInterface $failingScript) {
+    abstract public function isScriptComplete(string $className): bool;
 
-    }
+    /**
+     * Returns all migration scripts which have been run on the local application.
+     *
+     * @return array
+     */
+    abstract public function getCompletedScripts(): array;
 
-    public function getApplicationVersion(): int
+    /**
+     * Returns the target version number of the application as defined in the application class.
+     *
+     * @return int
+     */
+    public static function getApplicationVersion(): int
     {
         return Application::current()->getVersion();
     }
 
-    public function runMigrations(MigrationEntity $entity) {
-        RunMigrationsUseCase::execute($entity);
+    /**
+     * Allows additional logic to be added before or after migration execution without altering the use case.
+     *
+     * @param int $start
+     * @param int $end
+     * @param array $skip
+     */
+    public function runMigrations(int $start, int $end, array $skip = [])
+    {
+        RunMigrationsUseCase::execute($start, $end, $skip);
     }
 }

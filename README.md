@@ -3,8 +3,6 @@ Migrations Module
 
 Commonly, when applications are upgraded there are breaking changes that require a scripted solution. This module provides a framework to: quickly generate migration scripts; manage the local version of an instance of your application, and; run migration scripts in order to bring your local version up-to-date with the current project version. 
 
-The version history is stored in a repository model so if you are using a SaaS platform this scaffold should
-still be suitable.
 
 ## Setting the application version
 
@@ -15,25 +13,23 @@ class MyApplication extends Application
 {
     public function initialise()
     {
-        ...
+        // ...
         $this->version = 12; 
-        ...
+        // ...
     }
 }
 ~~~
 
 ## Creating a migration script
 
-To create a new migration script simply create a class that implements the MigrationScript interface. 
+A migration script must implement the MigrationScriptInterface. 
 
-**execute()** is the actual logic of your script.
+**execute()** is the logic of the migration.
 
-**version()** defines on which application version this script should be executed. Returns an int.
- 
-**priority()** determines the order in which scripts for the same version should be executed. Returns an int.
+**version()** must return an integer and defines on which application version this script should be executed. Migrations are executed in an order of version. Migrations on the same version are executed in the order they are registered. 
 
 ~~~php
-class ImageDeletionScript extends VersionUpgradeScript
+class ImageDeletionScript extends MigrationScript
 {
         public function execute()
         {
@@ -47,18 +43,12 @@ class ImageDeletionScript extends VersionUpgradeScript
         {
             return 17;
         }
-
-        public function priority(): int
-        {
-            return 0;
-        }
 }
 ~~~
 
 ## Registering your script
 
-Scripts will not be ran unless they are registered. Scripts can be registered by calling `registerMigrationScripts($scriptsArray)` on MigrationsModule.  
-
+Scripts will not be ran unless they are registered. Scripts are registered by calling `registerMigrationScripts($scriptsArray)` on MigrationsModule.  
 
 ~~~php
    MigrationsManager::getMigrationsManager()->registerMigrationScripts([
@@ -68,103 +58,46 @@ Scripts will not be ran unless they are registered. Scripts can be registered by
    ]);
 ~~~
 
-## Data Migration Scripts
-
-To reduce repeating code you can also extend the DataMigrationScript class. This class has methods already created to allow you to perform common migration patterns quickly. 
-
-DataMigrationScripts look the exact same as regular Migrations. You can call the inherited methods to perform tasks for you.  
-
-~~~php
-class ContactNameSplitting extends DataMigrationScript
-{
-        public function execute()
-        {
-            foreach (Image::all(new Equals('active', false)) as $image) {
-                unlink($image->filePath);
-                $image->delete();
-            }
-            
-            try {
-                $this->updateEnumOption(
-                    User::class,
-                    'status',
-                    'on line',
-                    'online'
-                );
-            } catch (\Rhubarb\Crown\Exceptions\ImplementationException $e) {
-            }
-        }
-    
-        public function version(): int
-        {
-            return 18;
-        }
-
-        public function priority(): int
-        {
-            return 10;
-        }
-}
-~~~
-
 ## Custard Commands
 
 ### migrations:migrate
 
-##### Parameters
-
-Parameters must be given in order. 
-
-| Parameter | Description | Default |
-| --- | --- | --- | 
-| Target Version | Which version migrations should be ran up to | current application version |
-| Starting Version | Where migrations should start from | current local version |
+The primary migrate command. All registered migration scripts with a version of or between the current locally stored version and the application version defined in code will be loaded and executed. 
 
 ##### Options
 
 | Option | shortcut |  Description | 
 | --- | :---: | --- | 
-| Skip Scripts | -s | It is possible to skip certain scripts, for example if you are re-running a failed migration and do not want to include the failing script. To do so simply include teh option -s with the next input being the script to skip. You can include multiple scripts | 
-| Resume | -r | If a previous migration failed you can fix the issue and resume the migratino from that point. |
+| Skip Scripts | -s | It is possible to skip certain scripts, for example if you are re-running a failed migration and do not want to include the failing script. To do so include the option -s followed by the full path of the script to skip. You can include multiple scripts with -s. |
 
-##### Examples
-
-Migrate to version 13 from current: `/vagrant/bin/custard migrations:migrate 13`
-
-Migrate from version 14 to 18: `/vagrant/bin/custard migrations:migrate 18 14`
-
-Resume migrating to version 18 skipping two scripts: 
-
-`/vagrant/bin/custard migrations:migrate -r 18 -s My\Project\Scripts\NewMigrationScript.php -s My\Project\Scripts\DestroyOldDataScript.php`
+##### Example
+ 
+`custard migrations:migrate -s My\Project\Scripts\NewMigrationScript.php -s My\Project\Scripts\DestroyOldDataScript.php`
 
 ### migrations:run-script
 
-This command simply takes the class of a script and executes it immediately.
+Takes the full path of a script and immediately executes it. 
 
 ##### Example
 
-Run NewMigrationScript 
+`custard migrations:run-script My\Project\Scripts\NewMigrationScript.php` 
 
-`/vagrant/bin/custard migrations:run-script My\Project\Scripts\NewMigrationScript.php` 
+## MigrationsManager
 
-## Configuration
+The MigrationsManager is used to register and retrieve Migration Scripts. It's core function is to provide a set of active, valid and ordered migration scripts within a range via the `getMigrationScripts()` function.
 
-There are a number of settings that can be customized with the MigrationsSettings class. 
+The MigrationsManager implemented the Singleton trait and can be accessed via `MigrationsManager::getMigrationsManager()`
 
+## MigrationsStateProvider
 
-| Setting | Description | Default |
-| --- | --- | --- |
-| setLocalVersionPath() | Used to set the path and name of the file that stores the Local Version number.  | System temp directory | 
-| setResumeScriptPath() | Used to set the path and name of the file that stores the resume point for if a migration fails | System temp directory | 
-| pageType | When a DataMigrationScript needs to iterate over large collections it will page based on this setting. | 100 | 
-| RepositoryType | Informs the migration module which repositry type is in use. | MySql::class | 
+The `MigrationsStateProvider` handles the current local version of the application and which migration scripts have been run. It must implement the following methods:
 
-~~~php
-...
-$migrationSettings = MigrationsSettings::singleton();
-$migrationSettings->setLocalVersionPath(__DIR__ . 'local-version.lock');
-$migrationSettings->setResumeScriptPath(__DIR__ . 'resume-script.lock');
-$migrationSettings->repositoryType = MySql::class;
-$migrationSettings->pageSize = 1000; 
-...
-~~~ 
+`getLocalVersion()` retrieves the local version. Must return an integer. 
+
+`setLocalVersion(int $newLocalVersion)` updates the local version.
+
+`markScriptCompleted(MigrationScriptInterface $migrationScript)` locally stores a script as having been successfully executed.
+
+`isScriptComplete(string $className)` checks if a script has already been successfully executed. 
+
+`getCompletedScripts()`
