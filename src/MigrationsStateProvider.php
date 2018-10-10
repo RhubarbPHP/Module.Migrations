@@ -29,14 +29,14 @@ abstract class MigrationsStateProvider implements ProviderInterface
      *
      * @param int $newLocalVersion
      */
-    abstract public function setLocalVersion(int $newLocalVersion): void;
+    abstract public function setLocalVersion(int $newLocalVersion);
 
     /**
      * Locally stores a MigrationScript as having been successfully executed.
      *
      * @param MigrationScriptInterface $migrationScript
      */
-    abstract public function markScriptCompleted(MigrationScriptInterface $migrationScript): void;
+    abstract public function markScriptCompleted(MigrationScriptInterface $migrationScript);
 
     /**
      * Checks if a migration script has already been successfully executed locally.

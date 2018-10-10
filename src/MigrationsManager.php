@@ -26,10 +26,10 @@ class MigrationsManager
     {
         $migrationScripts = [];
         $provider = MigrationsStateProvider::getProvider();
-        foreach ($this->migrationScripts as $migrationScript) {
-            $scriptClass = get_class($migrationScript);
+        foreach ($this->migrationScripts as $scriptClass) {
+            $migrationScript = new $scriptClass();
             if (!is_a($migrationScript, MigrationScriptInterface::class)) {
-                throw new \Error('Non-MigrationScriptInterface object provided to MigrationManager:' . $migrationScript);
+                throw new \Error('Non-MigrationScriptInterface object provided to MigrationManager: `' . $migrationScript.'`');
             }
             if (
                 $migrationScript->version() < $from
