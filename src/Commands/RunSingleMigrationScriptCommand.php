@@ -18,6 +18,7 @@ class RunSingleMigrationScriptCommand extends RequiresRepositoryCommand
 
     protected function configure()
     {
+        parent::configure();
         $this->setName('migrations:run-script')
             ->setDescription('Run a specific Migration Script.')
             ->addArgument(self::ARG_SCRIPT_CLASS, InputArgument::OPTIONAL,

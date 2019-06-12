@@ -17,6 +17,8 @@ class GetMigrationStateCommand extends RequiresRepositoryCommand
 {
     protected function configure()
     {
+        parent::configure();
+
         $this->setName('migrations:settings')
             ->setDescription('Output the current local and application versions');
     }

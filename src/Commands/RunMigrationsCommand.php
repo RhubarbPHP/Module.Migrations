@@ -21,6 +21,7 @@ class RunMigrationsCommand extends RequiresRepositoryCommand
 
     protected function configure()
     {
+        parent::configure();
         $this->setName('migrations:migrate')
             ->setDescription('Update local version number and execute relevant migration scripts')
             ->addOption(self::OPT_SKIP_SCRIPTS, 's', InputOption::VALUE_IS_ARRAY | InputOption::VALUE_REQUIRED,
