@@ -7,11 +7,12 @@ namespace Rhubarb\Modules\Migrations\Commands;
 use PHPUnit\Runner\Exception;
 use Rhubarb\Custard\Command\CustardCommand;
 use Rhubarb\Modules\Migrations\MigrationsStateProvider;
+use Rhubarb\Stem\Custard\RequiresRepositoryCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class RunMigrationsCommand extends CustardCommand
+class RunMigrationsCommand extends RequiresRepositoryCommand
 {
     const ARG_TARGET_VERSION = 'target-version';
     const ARG_START_VERSION = 'start-version';

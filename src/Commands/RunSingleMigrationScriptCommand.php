@@ -7,11 +7,12 @@ namespace Rhubarb\Modules\Migrations\Commands;
 use Rhubarb\Custard\Command\CustardCommand;
 use Rhubarb\Modules\Migrations\Interfaces\MigrationScriptInterface;
 use Rhubarb\Modules\Migrations\MigrationsManager;
+use Rhubarb\Stem\Custard\RequiresRepositoryCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class RunSingleMigrationScriptCommand extends CustardCommand
+class RunSingleMigrationScriptCommand extends RequiresRepositoryCommand
 {
     const ARG_SCRIPT_CLASS = 'script-class';
 

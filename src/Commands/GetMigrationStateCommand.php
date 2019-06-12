@@ -8,11 +8,12 @@ use Rhubarb\Crown\Application;
 use Rhubarb\Custard\Command\CustardCommand;
 use Rhubarb\Modules\Migrations\MigrationsSettings;
 use Rhubarb\Modules\Migrations\MigrationsStateProvider;
+use Rhubarb\Stem\Custard\RequiresRepositoryCommand;
 use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class GetMigrationStateCommand extends CustardCommand
+class GetMigrationStateCommand extends RequiresRepositoryCommand
 {
     protected function configure()
     {
