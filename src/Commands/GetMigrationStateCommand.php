@@ -21,7 +21,7 @@ class GetMigrationStateCommand extends RequiresRepositoryCommand
             ->setDescription('Output the current local and application versions');
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function executeWithConnection(InputInterface $input, OutputInterface $output)
     {
         $padr = function ($str, $padlen = 25) {
             return str_pad($str, $padlen, ' ', STR_PAD_RIGHT);

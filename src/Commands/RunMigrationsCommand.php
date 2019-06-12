@@ -27,7 +27,7 @@ class RunMigrationsCommand extends RequiresRepositoryCommand
                 'scripts which should *not* be run as part of this migration.', []);
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function executeWithConnection(InputInterface $input, OutputInterface $output)
     {
         $migrationStateProvider = MigrationsStateProvider::getProvider();
 

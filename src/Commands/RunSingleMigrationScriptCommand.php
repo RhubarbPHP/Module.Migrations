@@ -25,7 +25,7 @@ class RunSingleMigrationScriptCommand extends RequiresRepositoryCommand
             );
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function executeWithConnection(InputInterface $input, OutputInterface $output)
     {
         $scriptClass = $input->getArgument(self::ARG_SCRIPT_CLASS);
         if (is_null($scriptClass) || $scriptClass == 'list') {
